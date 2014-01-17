@@ -486,6 +486,9 @@ public class GitMinerOthersBean implements Serializable {
         calculeSubProgress(i, collaborators.size());
         while (!canceled && i < collaborators.size()) {
             User gitCollab = collaborators.get(i);
+            
+            out.printLog(gitCollab.getLogin()+"--"+gitCollab.getLocation());
+            
             EntityUser colab = minerCollaborator(gitCollab);
             colab.addCollaboratedRepository(repository);
             dao.edit(colab);
