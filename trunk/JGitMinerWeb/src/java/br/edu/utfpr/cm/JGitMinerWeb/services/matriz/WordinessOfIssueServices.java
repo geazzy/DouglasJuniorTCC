@@ -7,7 +7,7 @@ package br.edu.utfpr.cm.JGitMinerWeb.services.matriz;
 
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
 import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
-import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxNumberOfLinks;
+import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxWordiness;
 import br.edu.utfpr.cm.JGitMinerWeb.util.Util;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,23 +17,18 @@ import java.util.Map;
  *
  * @author geazzy
  */
-public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
+public class WordinessOfIssueServices extends AbstractMatrizServices {
 
-    private List<AuxNumberOfLinks> issueList;
+    private List<AuxWordiness> issueList;
 
-    public NumberOfLinksPerIssueServices(GenericDao dao) {
+    public WordinessOfIssueServices(GenericDao dao) {
         super(dao);
         this.issueList = new ArrayList<>();
     }
 
-    public NumberOfLinksPerIssueServices(GenericDao dao, EntityRepository repository, Map params) {
+    public WordinessOfIssueServices(GenericDao dao, EntityRepository repository, Map params) {
         super(dao, repository, params);
         this.issueList = new ArrayList<>();
-    }
-
-    private int getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
     }
 
     @Override
@@ -42,7 +37,7 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
             throw new IllegalArgumentException("Parâmetro Repository não pode ser nulo.");
         }
 
-        List<AuxNumberOfLinks> resultado;
+        List<AuxWordiness> resultado;
 
         resultado = getIssues();
         setIssueComments(resultado);
@@ -50,15 +45,19 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
         System.out.println("Result: . " + issueList.size());
 
         addToEntityMatrizNodeList(issueList);
-
     }
 
     @Override
     public String getHeadCSV() {
-        return "Issue;NumberofLinks;URL";
+        return "Issue;Wordiness;URL";
     }
 
-    private List<AuxNumberOfLinks> getIssues() {
+    private int getMilestoneNumber() {
+        String mileNumber = params.get("milestoneNumber") + "";
+        return Util.tratarStringParaInt(mileNumber);
+    }
+
+    private List<AuxWordiness> getIssues() {
 
         int mileNumber = new Integer(getMilestoneNumber());
 
@@ -66,7 +65,7 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
             throw new IllegalArgumentException("Numero do Milestone inválido.");
         }
 
-        String jpql = "SELECT NEW " + AuxNumberOfLinks.class.getName() + "(p.number, p.issue.url, p.issue.body) "
+        String jpql = "SELECT NEW " + AuxWordiness.class.getName() + "(p.number, p.issue.url, p.issue.body) "
                 + "FROM "
                 + "EntityPullRequest p "
                 + "WHERE "
@@ -77,7 +76,7 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
 
         System.out.println(jpql);
 
-        List<AuxNumberOfLinks> query = dao.selectWithParams(jpql,
+        List<AuxWordiness> query = dao.selectWithParams(jpql,
                 new String[]{
                     "repository",
                     mileNumber > 0 ? "milestoneNumber" : "#none#",},
@@ -90,8 +89,8 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
         return query;
     }
 
-    private void setIssueComments(List<AuxNumberOfLinks> resultado) {
-        for (AuxNumberOfLinks issue : resultado) {
+    private void setIssueComments(List<AuxWordiness> resultado) {
+        for (AuxWordiness issue : resultado) {
 
             String jpql2 = "SELECT c "
                     + "FROM "
@@ -106,14 +105,14 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
                         "number",}, new Object[]{
                         issue.getIssueNumber(),}));
 
-            issue.setNumberOflinks();
+            issue.setWordiness();
 
-            issueList.add(new AuxNumberOfLinks(
-                    issue.getIssueNumber(), issue.getUrl(), issue.getNumberOflinks()));
+            issueList.add(new AuxWordiness(
+                    issue.getIssueNumber(), issue.getUrl(), issue.getWordiness()));
 
-            System.out.println("NUMERO DE LINKS " + issue.getNumberOflinks().toString());
-
-            System.out.println("query 2: " + issue.getComments().size());
+//            System.out.println("NUMERO DE LINKS " + issue.getWordiness().toString());
+//
+            System.out.println("Comentarios: " + issue.getComments().size());
 
         }
     }
