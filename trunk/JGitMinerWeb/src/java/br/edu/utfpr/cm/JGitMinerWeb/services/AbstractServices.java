@@ -49,7 +49,7 @@ public abstract class AbstractServices implements Runnable, Serializable {
         return nodes;
     }
 
-    protected void setNodes(List<EntityNode> nodes) {
+    public void setNodes(List<EntityNode> nodes) {
         this.nodes = nodes;
     }
 
