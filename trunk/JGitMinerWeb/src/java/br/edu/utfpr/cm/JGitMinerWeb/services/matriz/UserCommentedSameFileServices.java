@@ -47,11 +47,6 @@ public class UserCommentedSameFileServices extends AbstractMatrizServices {
         return filesName;
     }
 
-    private Integer getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
-    }
-
     private Boolean isIncludeGenericComments() {
         return Boolean.parseBoolean(params.get("includeGenericsComments") + "");
     }

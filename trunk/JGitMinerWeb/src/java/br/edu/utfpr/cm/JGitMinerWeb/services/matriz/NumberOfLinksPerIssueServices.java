@@ -31,11 +31,6 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
         this.issueList = new ArrayList<>();
     }
 
-    private int getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
-    }
-
     @Override
     public void run() {
         if (getRepository() == null) {

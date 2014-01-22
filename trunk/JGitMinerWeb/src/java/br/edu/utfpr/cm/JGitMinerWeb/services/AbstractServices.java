@@ -7,6 +7,7 @@ package br.edu.utfpr.cm.JGitMinerWeb.services;
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
 import br.edu.utfpr.cm.JGitMinerWeb.pojo.EntityNode;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.nodes.NodeGeneric;
+import br.edu.utfpr.cm.JGitMinerWeb.util.Util;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -21,7 +22,7 @@ public abstract class AbstractServices implements Runnable, Serializable {
     protected final GenericDao dao;
     protected List<EntityNode> nodes;
     protected Map params;
-
+    
     public AbstractServices(GenericDao dao) {
         this.dao = dao;
     }
@@ -31,19 +32,24 @@ public abstract class AbstractServices implements Runnable, Serializable {
         this.params = params;
     }
 
-    public Date getBeginDate() {
+    protected Date getBeginDate() {
         return getDateParam("beginDate");
     }
 
-    public Date getEndDate() {
+    protected Date getEndDate() {
         return getDateParam("endDate");
+    }
+    
+    protected Integer getMilestoneNumber() {
+        String mileNumber = params.get("milestoneNumber") + "";
+        return Util.tratarStringParaInt(mileNumber);
     }
 
     public List<EntityNode> getNodes() {
         return nodes;
     }
 
-    public void setNodes(List<EntityNode> nodes) {
+    protected void setNodes(List<EntityNode> nodes) {
         this.nodes = nodes;
     }
 

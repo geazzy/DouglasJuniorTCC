@@ -47,11 +47,6 @@ public class UserModifySameFileInMilestoneServices extends AbstractMatrizService
         return filesName;
     }
 
-    private Integer getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
-    }
-
     @Override
     public void run() {
         System.out.println(params);

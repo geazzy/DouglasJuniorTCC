@@ -27,10 +27,6 @@ public class UserModifyFileInMilestoneServices extends AbstractMatrizServices {
         super(dao, repository, params);
     }
 
-    private int getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
-    }
 
     private String getPrefixFile() {
         return params.get("prefixFile") + "%";

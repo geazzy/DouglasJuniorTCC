@@ -52,11 +52,6 @@ public class WordinessOfIssueServices extends AbstractMatrizServices {
         return "Issue;Wordiness;URL";
     }
 
-    private int getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
-    }
-
     private List<AuxWordiness> getIssues() {
 
         int mileNumber = new Integer(getMilestoneNumber());

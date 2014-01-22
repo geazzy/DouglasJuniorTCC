@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz;
 
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxNumberOfMessages;
@@ -17,10 +16,10 @@ import java.util.Map;
 
 /**
  *
- * @author geazzy
- * Retonar o número de comentários de cada issue associada a um pullrequest
+ * @author geazzy Retonar o número de comentários de cada issue associada a um
+ * pullrequest
  */
-public class NumberOfMessagesPerIssueServices extends AbstractMatrizServices{
+public class NumberOfMessagesPerIssueServices extends AbstractMatrizServices {
 
     public NumberOfMessagesPerIssueServices(GenericDao dao) {
         super(dao);
@@ -30,12 +29,8 @@ public class NumberOfMessagesPerIssueServices extends AbstractMatrizServices{
         super(dao, repository, params);
     }
 
-     private Integer getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
-    }
-
     
+
     @Override
     public void run() {
         System.out.println(params);
@@ -45,11 +40,35 @@ public class NumberOfMessagesPerIssueServices extends AbstractMatrizServices{
         }
 
         int mileNumber = new Integer(getMilestoneNumber());
+        List<AuxNumberOfMessages> query = new ArrayList<>();
 
-        if (mileNumber <= 0) {
-            throw new IllegalArgumentException("Numero do Milestone inválido.");
+        if (mileNumber > 0) {
+            query = getByMilestone(mileNumber);
+        } else {
+            query = getByDate();
         }
-        
+
+        List<AuxNumberOfMessages> numberOfMessagesList = new ArrayList<>();
+        for (AuxNumberOfMessages aux : query) {
+            if (aux.getNumberOfMessages() > 0) {
+                numberOfMessagesList.add(new AuxNumberOfMessages(
+                        aux.getIssueNumber(), aux.getNumberOfMessages(), aux.getUrl()));
+            }
+        }
+
+        System.out.println("Result: " + numberOfMessagesList.size());
+
+        addToEntityMatrizNodeList(numberOfMessagesList);
+
+    }
+
+    @Override
+    public String getHeadCSV() {
+        return "Issue;numberOfMessages;URL";
+    }
+
+    private List<AuxNumberOfMessages> getByMilestone(int mileNumber) {
+
         String jpql = "SELECT NEW " + AuxNumberOfMessages.class.getName() + "(p.number, p.issue.commentsCount, p.issue.url) "
                 + "FROM "
                 + "EntityPullRequest p "
@@ -58,38 +77,46 @@ public class NumberOfMessagesPerIssueServices extends AbstractMatrizServices{
                 + (mileNumber > 0 ? "p.issue.milestone.number = :milestoneNumber " : "")
                 + " GROUP BY p.number ";
 
-
-         
         System.out.println(jpql);
-                  
+
         List<AuxNumberOfMessages> query = dao.selectWithParams(jpql,
                 new String[]{
                     "repository",
-                    mileNumber > 0 ? "milestoneNumber" : "#none#",
-                },
+                    mileNumber > 0 ? "milestoneNumber" : "#none#",},
                 new Object[]{
                     getRepository(),
-                    mileNumber,
+                    mileNumber,});
+
+        System.out.println("query: " + query.size());
+        return query;
+    }
+
+    private List<AuxNumberOfMessages> getByDate() {
+
+        String jpql = "SELECT NEW " + AuxNumberOfMessages.class.getName() + "(p.number, p.issue.commentsCount, p.issue.url) "
+                + "FROM "
+                + "EntityPullRequest p "
+                + "WHERE "
+                + "p.repository = :repository  AND "
+                + "p.issue.createdAt >= :dataInicial AND "
+                + "p.issue.createdAt <= :dataFinal "
+                + " GROUP BY p.number ";
+
+        System.out.println(jpql);
+
+        List<AuxNumberOfMessages> query = dao.selectWithParams(jpql,
+                new String[]{
+                    "repository",
+                    "dataInicial",
+                    "dataFinal"
+                }, new Object[]{
+                    getRepository(),
+                    getBeginDate(),
+                    getEndDate()
                 });
 
         System.out.println("query: " + query.size());
-        
-        List<AuxNumberOfMessages> numberOfMessagesList = new ArrayList<>();
-        for (AuxNumberOfMessages aux : query) {
-            if (aux.getNumberOfMessages() > 0)
-                numberOfMessagesList.add(new AuxNumberOfMessages(
-                    aux.getIssueNumber(),aux.getNumberOfMessages(), aux.getUrl() ));     
-        }
-
-        System.out.println("Result: " + numberOfMessagesList.size());
-
-        addToEntityMatrizNodeList(numberOfMessagesList);
-        
+        return query;
     }
 
-    @Override
-    public String getHeadCSV() {
-        return "Issue;numberOfMessages;URL";
-    }
-    
 }

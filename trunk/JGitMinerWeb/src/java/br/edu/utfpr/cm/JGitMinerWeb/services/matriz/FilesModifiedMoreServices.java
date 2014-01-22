@@ -28,10 +28,6 @@ public class FilesModifiedMoreServices extends AbstractMatrizServices {
         super(dao, repository, params);
     }
 
-    private int getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
-    }
 
     private int getPercent() {
         String percent = params.get("percent") + "";
