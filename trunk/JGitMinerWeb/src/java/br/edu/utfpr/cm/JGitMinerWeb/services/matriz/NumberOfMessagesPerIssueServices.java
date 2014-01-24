@@ -43,9 +43,9 @@ public class NumberOfMessagesPerIssueServices extends AbstractMatrizServices {
         List<AuxNumberOfMessages> query = new ArrayList<>();
 
         if (mileNumber > 0) {
-            query = getByMilestone(mileNumber);
+            query = getIssuesByMilestone(mileNumber);
         } else {
-            query = getByDate();
+            query = getIssuesByDate();
         }
 
         List<AuxNumberOfMessages> numberOfMessagesList = new ArrayList<>();
@@ -67,7 +67,7 @@ public class NumberOfMessagesPerIssueServices extends AbstractMatrizServices {
         return "Issue;numberOfMessages;URL";
     }
 
-    private List<AuxNumberOfMessages> getByMilestone(int mileNumber) {
+    private List<AuxNumberOfMessages> getIssuesByMilestone(int mileNumber) {
 
         String jpql = "SELECT NEW " + AuxNumberOfMessages.class.getName() + "(p.number, p.issue.commentsCount, p.issue.url) "
                 + "FROM "
@@ -91,7 +91,7 @@ public class NumberOfMessagesPerIssueServices extends AbstractMatrizServices {
         return query;
     }
 
-    private List<AuxNumberOfMessages> getByDate() {
+    private List<AuxNumberOfMessages> getIssuesByDate() {
 
         String jpql = "SELECT NEW " + AuxNumberOfMessages.class.getName() + "(p.number, p.issue.commentsCount, p.issue.url) "
                 + "FROM "

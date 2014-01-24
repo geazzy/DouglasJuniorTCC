@@ -64,17 +64,19 @@ public class AuxNumberOfLinks {
     }
 
     public void setNumberOflinks() {
-  
-        this.numberOflinks += UrlValidate.urlInString(getIssueBody());
+
+        if (getIssueBody() != null) {
+            System.out.println(getIssueBody().toString());
+            this.numberOflinks += UrlValidate.urlInString(getIssueBody().toString());
+        }
 
         for (EntityComment entityComment : comments) {
 
-           // System.out.println("Quantidade de links do " + entityComment.toString() + " == " + UrlValidate.urlInString(entityComment.getBody().toString()));
-            this.numberOflinks += UrlValidate.urlInString(entityComment.getBody().toString());
-
+            if (entityComment.getBody() != null) {
+                this.numberOflinks += UrlValidate.urlInString(entityComment.getBody().toString());
+            }
         }
 
-       // System.out.println("Quantidade de links da issue " + this.toString() + " : " + this.numberOflinks);
     }
 
     public List<EntityComment> getComments() {

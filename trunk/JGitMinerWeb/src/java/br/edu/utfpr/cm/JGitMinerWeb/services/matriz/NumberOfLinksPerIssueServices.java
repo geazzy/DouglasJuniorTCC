@@ -8,7 +8,6 @@ package br.edu.utfpr.cm.JGitMinerWeb.services.matriz;
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
 import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxNumberOfLinks;
-import br.edu.utfpr.cm.JGitMinerWeb.util.Util;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,12 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
 
         List<AuxNumberOfLinks> resultado;
 
-        resultado = getIssues();
+        if(getMilestoneNumber() > 0){
+            resultado = getIssuesByMilestone();
+        }else{
+            resultado = getIssuesByDate();
+        }
+        
         setIssueComments(resultado);
 
         System.out.println("Result: . " + issueList.size());
@@ -53,7 +57,7 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
         return "Issue;NumberofLinks;URL";
     }
 
-    private List<AuxNumberOfLinks> getIssues() {
+    private List<AuxNumberOfLinks> getIssuesByMilestone() {
 
         int mileNumber = new Integer(getMilestoneNumber());
 
@@ -86,6 +90,7 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
     }
 
     private void setIssueComments(List<AuxNumberOfLinks> resultado) {
+        
         for (AuxNumberOfLinks issue : resultado) {
 
             String jpql2 = "SELECT c "
@@ -111,6 +116,36 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
             System.out.println("query 2: " + issue.getComments().size());
 
         }
+    }
+
+    private List<AuxNumberOfLinks> getIssuesByDate() {
+        
+          String jpql = "SELECT NEW " + AuxNumberOfLinks.class.getName() + "(p.number, p.issue.url, p.issue.body) "
+                + "FROM "
+                + "EntityPullRequest p "
+                + "WHERE "
+                + "p.repository = :repository  AND "
+                + "p.issue.commentsCount > 0  AND "
+                + "p.issue.createdAt >= :dataInicial AND "
+                + "p.issue.createdAt <= :dataFinal "
+                + " GROUP BY p.number ";
+
+        System.out.println(jpql);
+
+        List<AuxNumberOfLinks> query = dao.selectWithParams(jpql,
+                new String[]{
+                    "repository",
+                    "dataInicial",
+                    "dataFinal"
+                }, new Object[]{
+                    getRepository(),
+                    getBeginDate(),
+                    getEndDate()
+                });
+
+        System.out.println("query: " + query.size());
+
+        return query;
     }
 
 }

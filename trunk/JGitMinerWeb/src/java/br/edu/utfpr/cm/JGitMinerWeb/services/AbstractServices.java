@@ -32,11 +32,11 @@ public abstract class AbstractServices implements Runnable, Serializable {
         this.params = params;
     }
 
-    protected Date getBeginDate() {
+    public Date getBeginDate() {
         return getDateParam("beginDate");
     }
 
-    protected Date getEndDate() {
+    public Date getEndDate() {
         return getDateParam("endDate");
     }
     

@@ -39,7 +39,12 @@ public class WordinessOfIssueServices extends AbstractMatrizServices {
 
         List<AuxWordiness> resultado;
 
-        resultado = getIssues();
+        if(getMilestoneNumber() > 0){
+            resultado = getIssuesByMilestone();
+        }else{
+            resultado = getIssuesByDate();
+        }
+        
         setIssueComments(resultado);
 
         System.out.println("Result: . " + issueList.size());
@@ -52,7 +57,7 @@ public class WordinessOfIssueServices extends AbstractMatrizServices {
         return "Issue;Wordiness;URL";
     }
 
-    private List<AuxWordiness> getIssues() {
+    private List<AuxWordiness> getIssuesByMilestone() {
 
         int mileNumber = new Integer(getMilestoneNumber());
 
@@ -110,6 +115,36 @@ public class WordinessOfIssueServices extends AbstractMatrizServices {
             System.out.println("Comentarios: " + issue.getComments().size());
 
         }
+    }
+
+    private List<AuxWordiness> getIssuesByDate() {
+        
+          String jpql = "SELECT NEW " + AuxWordiness.class.getName() + "(p.number, p.issue.url, p.issue.body) "
+                + "FROM "
+                + "EntityPullRequest p "
+                + "WHERE "
+                + "p.repository = :repository  AND "
+                + "p.issue.commentsCount > 0  AND "
+                + "p.issue.createdAt >= :dataInicial AND "
+                + "p.issue.createdAt <= :dataFinal "
+                + " GROUP BY p.number ";
+
+        System.out.println(jpql);
+
+        List<AuxWordiness> query = dao.selectWithParams(jpql,
+                new String[]{
+                    "repository",
+                    "dataInicial",
+                    "dataFinal"
+                }, new Object[]{
+                    getRepository(),
+                    getBeginDate(),
+                    getEndDate()
+                });
+
+        System.out.println("query: " + query.size());
+
+        return query;
     }
 
 }

@@ -24,52 +24,45 @@ import java.util.regex.PatternSyntaxException;
 
 public class UrlValidate {
 
-    private static final String padrao = "\\(?\\b(http://|https://|www[.])[-A-Za-z0-9+&@#/%?=~_()|!:,.;]*[-A-Za-z0-9+&@#/%=~_()|]";
+        private static final String padrao = "(\\[\\w*\\])?\\(?\\b(http://|https://|www[.])[-A-Za-z0-9+&@#/%?=~_()|!:,.;]*[-A-Za-z0-9+&@#/%=~_()|]";
 
 
     private static Boolean isURL(String value) {
 
-//        try {
             Pattern pattern = Pattern.compile(padrao);
             Matcher matcher = pattern.matcher(value);
-            
-//            if(matcher.matches()){
-//                try {
-//                    escrever(value);
-//                } catch (IOException ex) {
-//                    Logger.getLogger(UrlValidate.class.getName()).log(Level.SEVERE, null, ex);
-//                    ex.printStackTrace();
-//                }
-//            }
-            
+
             return matcher.matches();
-//        } catch (PatternSyntaxException e) {
-//            e.printStackTrace();
-//            return false;
-//        }
+
     }
 
-    public static Integer urlInString(String linha) {
+    public static Integer urlInString(String linha) throws NullPointerException{
 
         Integer quantidadeDeUrl = new Integer(0);
 
         Scanner tokens = new Scanner(linha);
-        String token = new String();
+        String token;
 
         while (tokens.hasNext()) {
             token = tokens.next();
 
             if (isURL(token)) {
+                try {
+                    escrever(token, "/home/geazzy/url.txt");
+                } catch (IOException ex) {
+                    Logger.getLogger(UrlValidate.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 quantidadeDeUrl++;
             }
         }
 
+        tokens.close();
         return quantidadeDeUrl;
     }
 
-    private static void escrever(String valor) throws IOException {
+    private static void escrever(String valor, String file) throws IOException {
         
-        Path txt = Paths.get("/home/geazzy/url.txt");
+        Path txt = Paths.get(file);
         
         if(!Files.exists(txt)){
             Files.createFile(txt);

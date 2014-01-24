@@ -70,17 +70,20 @@ public class AuxWordiness {
     }
 
     public void setWordiness() {
-       // System.out.println(getIssueBody());
-        
-        this.wordiness += LuceneUtil.tokenizeString(getIssueBody()).size();
+  
+        if (getIssueBody() != null) {
+           
+            this.wordiness += LuceneUtil.tokenizeString(getIssueBody().toString()).size();
+        }
 
         for (EntityComment entityComment : comments) {
 
-           // System.out.println("Quantidade de links do " + entityComment.toString() + " == " + UrlValidate.urlInString(entityComment.getBody().toString()));
-            
-            this.wordiness += LuceneUtil.tokenizeString(entityComment.getBody().toString()).size();
+            if (entityComment.getBody() != null) {
+                this.wordiness += LuceneUtil.tokenizeString(entityComment.getBody().toString()).size();
+            }
 
         }
+
     }
 
     @Override
