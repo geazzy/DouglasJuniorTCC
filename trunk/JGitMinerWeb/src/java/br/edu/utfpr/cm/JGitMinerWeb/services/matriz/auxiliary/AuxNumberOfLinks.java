@@ -67,13 +67,13 @@ public class AuxNumberOfLinks {
 
         if (getIssueBody() != null) {
             System.out.println(getIssueBody().toString());
-            this.numberOflinks += UrlValidate.urlInString(getIssueBody().toString());
+            this.numberOflinks += UrlValidator.urlInString(getIssueBody().toString());
         }
 
         for (EntityComment entityComment : comments) {
 
             if (entityComment.getBody() != null) {
-                this.numberOflinks += UrlValidate.urlInString(entityComment.getBody().toString());
+                this.numberOflinks += UrlValidator.urlInString(entityComment.getBody().toString());
             }
         }
 
