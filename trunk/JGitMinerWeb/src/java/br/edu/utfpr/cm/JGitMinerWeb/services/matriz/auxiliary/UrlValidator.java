@@ -36,7 +36,7 @@ public class UrlValidator {
 
     }
 
-    public static Integer urlInString(String linha) throws NullPointerException{
+    public static Integer urlInString(String linha){
 
         Integer quantidadeDeUrl = new Integer(0);
 

@@ -6,6 +6,7 @@
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary;
 
 import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityComment;
+import com.google.common.base.Strings;
 import java.util.List;
 
 /**
@@ -70,17 +71,12 @@ public class AuxWordiness {
     }
 
     public void setWordiness() {
-  
-        if (getIssueBody() != null) {
-           
-            this.wordiness += LuceneUtil.tokenizeString(getIssueBody().toString()).size();
-        }
+
+        this.wordiness += LuceneUtil.tokenizeString(Strings.nullToEmpty(getIssueBody())).size();
 
         for (EntityComment entityComment : comments) {
 
-            if (entityComment.getBody() != null) {
-                this.wordiness += LuceneUtil.tokenizeString(entityComment.getBody().toString()).size();
-            }
+            this.wordiness += LuceneUtil.tokenizeString(Strings.nullToEmpty(entityComment.getBody())).size();
 
         }
 

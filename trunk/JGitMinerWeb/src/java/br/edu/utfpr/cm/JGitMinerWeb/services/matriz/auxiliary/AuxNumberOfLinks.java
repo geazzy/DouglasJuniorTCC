@@ -6,6 +6,7 @@
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary;
 
 import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityComment;
+import com.google.common.base.Strings;
 import java.util.List;
 import java.util.Set;
 
@@ -65,16 +66,12 @@ public class AuxNumberOfLinks {
 
     public void setNumberOflinks() {
 
-        if (getIssueBody() != null) {
-            System.out.println(getIssueBody().toString());
-            this.numberOflinks += UrlValidator.urlInString(getIssueBody().toString());
-        }
+        this.numberOflinks += UrlValidator.urlInString(Strings.nullToEmpty(getIssueBody()));
 
         for (EntityComment entityComment : comments) {
 
-            if (entityComment.getBody() != null) {
-                this.numberOflinks += UrlValidator.urlInString(entityComment.getBody().toString());
-            }
+            this.numberOflinks += UrlValidator.urlInString(Strings.nullToEmpty(entityComment.getBody()));
+
         }
 
     }
