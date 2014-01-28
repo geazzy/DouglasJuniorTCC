@@ -46,7 +46,7 @@ public class UserServices implements Serializable {
         user.setIdUser(gitUser.getId());
         user.setLogin(gitUser.getLogin());
         user.setUrl(gitUser.getUrl());
-         user.setLocation(gitUser.getLocation());
+       // user.setLocation(gitUser.getLocation());
 
         if (firstMiner) {
             user.setCreatedAt(gitUser.getCreatedAt());
@@ -63,7 +63,7 @@ public class UserServices implements Serializable {
             user.setCompany(gitUser.getCompany());
             user.setEmail(gitUser.getEmail());
             user.setHtmlUrl(gitUser.getHtmlUrl());
-            //user.setLocation(gitUser.getLocation());
+            user.setLocation(gitUser.getLocation());
             user.setName(gitUser.getName());
             user.setType(gitUser.getType());
         }

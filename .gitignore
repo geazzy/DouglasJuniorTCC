@@ -3,3 +3,4 @@
 # Package Files #
 *.ear
 Pacotes
+/trunk/JGitMinerWeb/src/java/br/edu/utfpr/cm/JGitMinerWeb/accounts
