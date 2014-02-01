@@ -3,12 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz;
 
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
+import br.edu.utfpr.cm.JGitMinerWeb.pojo.EntityNode;
 import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
-import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxNumberOfLinks;
-import java.util.ArrayList;
+import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxNumberInteressados;
 import java.util.List;
 import java.util.Map;
 
@@ -16,55 +17,54 @@ import java.util.Map;
  *
  * @author geazzy
  */
-public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
+public class NumeroDeInteressadosNaIssueServices extends AbstractMatrizServices{
 
-    private List<AuxNumberOfLinks> issueList;
-
-    public NumberOfLinksPerIssueServices(GenericDao dao) {
+      private List<AuxNumberInteressados> issueList;
+    
+    public NumeroDeInteressadosNaIssueServices(GenericDao dao) {
         super(dao);
-        this.issueList = new ArrayList<>();
     }
 
-    public NumberOfLinksPerIssueServices(GenericDao dao, EntityRepository repository, Map params) {
+    public NumeroDeInteressadosNaIssueServices(GenericDao dao, EntityRepository repository, Map params) {
         super(dao, repository, params);
-        this.issueList = new ArrayList<>();
     }
+    
+    
 
     @Override
     public void run() {
+        System.out.println(params);
+
         if (getRepository() == null) {
             throw new IllegalArgumentException("Parâmetro Repository não pode ser nulo.");
         }
-
-       
-        if(getMilestoneNumber() > 0){
-             getIssuesByMilestone();
-        }else{
-             getIssuesByDate();
-        }
         
-        setIssueComments();
+        if (getMilestoneNumber() > 0) {
+            getIssuesByMilestone();
+        } else {
+            getIssuesByDate();
+        }
 
-        System.out.println("Result: . " + issueList.size());
+        obterQuantidadeDeInteressados();
 
+        
         addToEntityMatrizNodeList(issueList);
 
     }
 
     @Override
     public String getHeadCSV() {
-        return "Issue;NumberofLinks;URL";
+        return "IssueNumber;NumInteressados;url";
     }
 
     private void getIssuesByMilestone() {
-
-        int mileNumber = new Integer(getMilestoneNumber());
+          int mileNumber = new Integer(getMilestoneNumber());
 
         if (mileNumber <= 0) {
             throw new IllegalArgumentException("Numero do Milestone inválido.");
         }
 
-        String jpql = "SELECT NEW " + AuxNumberOfLinks.class.getName() + "(p.number, p.issue.url, p.issue.body) "
+        String jpql = "SELECT NEW " + AuxNumberInteressados.class.getName() + "(p.issue.id, p.number, p.issue.url) "
                 + "FROM "
                 + "EntityPullRequest p "
                 + "WHERE "
@@ -75,7 +75,7 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
 
         System.out.println(jpql);
 
-        List<AuxNumberOfLinks> query = dao.selectWithParams(jpql,
+        List<AuxNumberInteressados> query = dao.selectWithParams(jpql,
                 new String[]{
                     "repository",
                     mileNumber > 0 ? "milestoneNumber" : "#none#",},
@@ -85,41 +85,13 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
 
         System.out.println("query: " + query.size());
 
-        issueList = query;
-    }
+        this.issueList = query;
 
-    private void setIssueComments() {
-        
-        for (AuxNumberOfLinks issue : issueList) {
-
-            String jpql2 = "SELECT c "
-                    + "FROM "
-                    + "EntityComment c "
-                    + "WHERE "
-                    + "c.issue.number  = :number  ";
-
-            System.out.println("jpql2: " + jpql2);
-
-            issue.setComments(dao.selectWithParams(jpql2,
-                    new String[]{
-                        "number",}, new Object[]{
-                        issue.getIssueNumber(),}));
-
-            issue.setNumberOflinks();
-
-            issueList.add(new AuxNumberOfLinks(
-                    issue.getIssueNumber(), issue.getUrl(), issue.getNumberOflinks()));
-
-            System.out.println("NUMERO DE LINKS " + issue.getNumberOflinks().toString());
-
-            System.out.println("query 2: " + issue.getComments().size());
-
-        }
     }
 
     private void getIssuesByDate() {
-        
-          String jpql = "SELECT NEW " + AuxNumberOfLinks.class.getName() + "(p.number, p.issue.url, p.issue.body) "
+      
+        String jpql = "SELECT NEW " + AuxNumberInteressados.class.getName() + "(p.issue.id, p.number, p.issue.url) "
                 + "FROM "
                 + "EntityPullRequest p "
                 + "WHERE "
@@ -131,7 +103,7 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
 
         System.out.println(jpql);
 
-        List<AuxNumberOfLinks> query = dao.selectWithParams(jpql,
+        List<AuxNumberInteressados> query = dao.selectWithParams(jpql,
                 new String[]{
                     "repository",
                     "dataInicial",
@@ -144,7 +116,28 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
 
         System.out.println("query: " + query.size());
 
-        issueList = query;
+        this.issueList = query;
     }
 
+    private void obterQuantidadeDeInteressados() {
+      
+        for (AuxNumberInteressados issue : issueList) {
+            String jpql3 = "SELECT count(ie) "
+                        + "FROM "
+                        + "EntityIssueEvent ie "
+                        + "WHERE "
+                        + "ie.issue.id = :id "
+                    + " and ie.event = 'subscribed'";
+            
+            System.out.println("jpql3: " + jpql3);
+
+                issue.setQuantidadeDeInteressados(((Long)(dao.selectWithParams(jpql3,
+                        new String[]{
+                            "id",}, new Object[]{
+                            issue.getId(),}) ).get(0)).intValue());
+                
+                System.out.println("number: "+issue.getIssueNumber()+" ID: "+issue.getId());
+        }
+    }
+    
 }

@@ -7,9 +7,7 @@ package br.edu.utfpr.cm.JGitMinerWeb.services.matriz;
 
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxNumberOfMessages;
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityMilestone;
 import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
-import br.edu.utfpr.cm.JGitMinerWeb.util.Util;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

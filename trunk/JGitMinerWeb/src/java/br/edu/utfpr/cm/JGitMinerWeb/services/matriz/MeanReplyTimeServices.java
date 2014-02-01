@@ -6,9 +6,9 @@
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz;
 
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
+import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityComment;
 import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
-import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxNumberOfLinks;
-import java.util.ArrayList;
+import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxMeanReplyTime;
 import java.util.List;
 import java.util.Map;
 
@@ -16,18 +16,16 @@ import java.util.Map;
  *
  * @author geazzy
  */
-public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
+public class MeanReplyTimeServices extends AbstractMatrizServices {
 
-    private List<AuxNumberOfLinks> issueList;
+    private List<AuxMeanReplyTime> issueList;
 
-    public NumberOfLinksPerIssueServices(GenericDao dao) {
+    public MeanReplyTimeServices(GenericDao dao) {
         super(dao);
-        this.issueList = new ArrayList<>();
     }
 
-    public NumberOfLinksPerIssueServices(GenericDao dao, EntityRepository repository, Map params) {
+    public MeanReplyTimeServices(GenericDao dao, EntityRepository repository, Map params) {
         super(dao, repository, params);
-        this.issueList = new ArrayList<>();
     }
 
     @Override
@@ -36,35 +34,31 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
             throw new IllegalArgumentException("Parâmetro Repository não pode ser nulo.");
         }
 
-       
-        if(getMilestoneNumber() > 0){
-             getIssuesByMilestone();
-        }else{
-             getIssuesByDate();
+        if (getMilestoneNumber() > 0) {
+            getIssuesByMilestone();
+        } else {
+            getIssuesByDate();
         }
-        
-        setIssueComments();
 
+        setIssueComments();
+        
+        setMeanReplyTime();
+        
         System.out.println("Result: . " + issueList.size());
 
         addToEntityMatrizNodeList(issueList);
-
     }
 
     @Override
     public String getHeadCSV() {
-        return "Issue;NumberofLinks;URL";
+        return "IssueNumber;Mean;url";
     }
 
     private void getIssuesByMilestone() {
 
         int mileNumber = new Integer(getMilestoneNumber());
 
-        if (mileNumber <= 0) {
-            throw new IllegalArgumentException("Numero do Milestone inválido.");
-        }
-
-        String jpql = "SELECT NEW " + AuxNumberOfLinks.class.getName() + "(p.number, p.issue.url, p.issue.body) "
+        String jpql = "SELECT NEW " + AuxMeanReplyTime.class.getName() + "(p.issue) "
                 + "FROM "
                 + "EntityPullRequest p "
                 + "WHERE "
@@ -75,7 +69,7 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
 
         System.out.println(jpql);
 
-        List<AuxNumberOfLinks> query = dao.selectWithParams(jpql,
+        List<AuxMeanReplyTime> query = dao.selectWithParams(jpql,
                 new String[]{
                     "repository",
                     mileNumber > 0 ? "milestoneNumber" : "#none#",},
@@ -88,38 +82,8 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
         issueList = query;
     }
 
-    private void setIssueComments() {
-        
-        for (AuxNumberOfLinks issue : issueList) {
-
-            String jpql2 = "SELECT c "
-                    + "FROM "
-                    + "EntityComment c "
-                    + "WHERE "
-                    + "c.issue.number  = :number  ";
-
-            System.out.println("jpql2: " + jpql2);
-
-            issue.setComments(dao.selectWithParams(jpql2,
-                    new String[]{
-                        "number",}, new Object[]{
-                        issue.getIssueNumber(),}));
-
-            issue.setNumberOflinks();
-
-            issueList.add(new AuxNumberOfLinks(
-                    issue.getIssueNumber(), issue.getUrl(), issue.getNumberOflinks()));
-
-            System.out.println("NUMERO DE LINKS " + issue.getNumberOflinks().toString());
-
-            System.out.println("query 2: " + issue.getComments().size());
-
-        }
-    }
-
     private void getIssuesByDate() {
-        
-          String jpql = "SELECT NEW " + AuxNumberOfLinks.class.getName() + "(p.number, p.issue.url, p.issue.body) "
+        String jpql = "SELECT NEW " + AuxMeanReplyTime.class.getName() + "(p.issue) "
                 + "FROM "
                 + "EntityPullRequest p "
                 + "WHERE "
@@ -131,7 +95,7 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
 
         System.out.println(jpql);
 
-        List<AuxNumberOfLinks> query = dao.selectWithParams(jpql,
+        List<AuxMeanReplyTime> query = dao.selectWithParams(jpql,
                 new String[]{
                     "repository",
                     "dataInicial",
@@ -145,6 +109,34 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
         System.out.println("query: " + query.size());
 
         issueList = query;
+    }
+
+    private void setIssueComments() {
+
+        for (AuxMeanReplyTime issue : issueList) {
+            String jpql2 = "SELECT c "
+                    + "FROM "
+                    + "EntityComment c "
+                    + "WHERE "
+                    + "c.issue.number  = :number  ";
+
+            System.out.println("jpql2: " + jpql2);
+
+            issue.setCommentsList(dao.selectWithParams(jpql2,
+                    new String[]{
+                        "number",}, new Object[]{
+                        issue.getIssue().getNumber(),}));
+
+            System.out.println("numero de comentario: " + issue.getCommentsList().size());
+        }
+
+    }
+
+    private void setMeanReplyTime() {
+        
+        for (AuxMeanReplyTime issue : issueList) {
+           issue.setMean();
+        }
     }
 
 }
