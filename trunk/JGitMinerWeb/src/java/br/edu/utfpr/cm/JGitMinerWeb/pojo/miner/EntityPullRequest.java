@@ -20,6 +20,9 @@ import javax.persistence.*;
 @NamedQueries({
     @NamedQuery(name = "PullRequest.findByIdPullRequest", query = "SELECT p FROM EntityPullRequest p WHERE p.idPullRequest = :idPullRequest"),
     @NamedQuery(name = "PullRequest.findByNumberAndRepository", query = "SELECT p FROM EntityPullRequest p WHERE p.number = :number AND p.repository = :repository"),
+    @NamedQuery(name = "PullRequest.findAllByRepository", query = "SELECT p FROM EntityPullRequest p WHERE p.repository = :repository"),
+    @NamedQuery(name = "PullRequest.findByMilestoneAndRepository", query = "SELECT p FROM EntityPullRequest p WHERE p.repository = :repository and p.issue.milestone.number = :milestone"),
+    @NamedQuery(name = "PullRequest.findByDateAndRepository", query = "SELECT p FROM EntityPullRequest p WHERE p.repository = :repository and p.issue.createdAt >= :dataInicial AND p.issue.createdAt <= :dataFinal"),
     @NamedQuery(name = "PullRequest.findByIssue", query = "SELECT p FROM EntityPullRequest p WHERE p.issue = :issue")
 })
 public class EntityPullRequest implements InterfaceEntity, Serializable {
