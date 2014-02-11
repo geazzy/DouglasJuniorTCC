@@ -5,8 +5,8 @@
  */
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary;
 
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityComment;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityIssue;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityComment;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityIssue;
 import java.util.List;
 import org.joda.time.DateTime;
 import org.joda.time.Hours;

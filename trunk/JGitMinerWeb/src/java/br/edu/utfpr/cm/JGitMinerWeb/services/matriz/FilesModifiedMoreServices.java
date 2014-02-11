@@ -5,8 +5,9 @@
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz;
 
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxFileCountSum;
+import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
 import br.edu.utfpr.cm.JGitMinerWeb.util.Util;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,12 +21,12 @@ import java.util.Map;
  */
 public class FilesModifiedMoreServices extends AbstractMatrizServices {
 
-    public FilesModifiedMoreServices(GenericDao dao) {
-        super(dao);
+    public FilesModifiedMoreServices(GenericDao dao, OutLog out) {
+        super(dao, out);
     }
 
-    public FilesModifiedMoreServices(GenericDao dao, EntityRepository repository, Map params) {
-        super(dao, repository, params);
+    public FilesModifiedMoreServices(GenericDao dao, EntityRepository repository, Map params, OutLog out) {
+        super(dao, repository, params, out);
     }
 
 

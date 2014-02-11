@@ -5,8 +5,9 @@
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz;
 
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxUserUserFile;
+import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,12 +18,12 @@ import java.util.Map;
  */
 public class UserModifySameFileInDateServices extends AbstractMatrizServices {
 
-    public UserModifySameFileInDateServices(GenericDao dao) {
-        super(dao);
+    public UserModifySameFileInDateServices(GenericDao dao, OutLog out) {
+        super(dao, out);
     }
 
-    public UserModifySameFileInDateServices(GenericDao dao, EntityRepository repository, Map params) {
-        super(dao, repository, params);
+    public UserModifySameFileInDateServices(GenericDao dao, EntityRepository repository, Map params, OutLog out) {
+        super(dao, repository, params, out);
     }
 
     private String getPrefixFile() {
@@ -33,6 +34,17 @@ public class UserModifySameFileInDateServices extends AbstractMatrizServices {
         return "%" + params.get("suffixFile");
     }
 
+    private List<String> getFilesName() {
+        List<String> filesName = new ArrayList<>();
+        for (String fileName : (params.get("filesName") + "").split("\n")) {
+            fileName = fileName.trim();
+            if (!fileName.isEmpty()) {
+                filesName.add(fileName);
+            }
+        }
+        return filesName;
+    }
+
     @Override
     public void run() {
         System.out.println(params);
@@ -40,6 +52,10 @@ public class UserModifySameFileInDateServices extends AbstractMatrizServices {
         if (getRepository() == null) {
             throw new IllegalArgumentException("Parâmetro Repository não pode ser nulo.");
         }
+
+        List<String> filesName = getFilesName();
+        String prefix = getPrefixFile();
+        String suffix = getSuffixFile();
 
         String jpql = "SELECT DISTINCT NEW " + AuxUserUserFile.class.getName() + "(rc.committer.login, rc.commit.committer.email, rc2.committer.login, rc2.commit.committer.email, f.filename) "
                 + "FROM "
@@ -50,10 +66,11 @@ public class UserModifySameFileInDateServices extends AbstractMatrizServices {
                 + "rc2.repository = :repo AND "
                 + "rc.commit.committer.dateCommitUser BETWEEN :beginDate AND :endDate AND "
                 + "rc2.commit.committer.dateCommitUser BETWEEN :beginDate AND :endDate AND "
-                + "f.filename LIKE :prefix AND "
-                + "f.filename LIKE :suffix AND "
-                + "f2.filename LIKE :prefix AND "
-                + "f2.filename LIKE :suffix AND "
+                + (prefix.length() > 1 ? "f.filename LIKE :prefix AND " : "")
+                + (prefix.length() > 1 ? "f2.filename LIKE :prefix AND " : "")
+                + (suffix.length() > 1 ? "f.filename LIKE :suffix AND " : "")
+                + (suffix.length() > 1 ? "f2.filename LIKE :suffix AND " : "")
+                + (!filesName.isEmpty() ? "f.filename IN :filesName AND " : "")
                 + "f.filename = f2.filename AND "
                 + "rc.commit.committer.email <> rc2.commit.committer.email ";
 
@@ -61,15 +78,17 @@ public class UserModifySameFileInDateServices extends AbstractMatrizServices {
 
         String[] bdParams = new String[]{
             "repo",
-            "prefix",
-            "suffix",
+            (prefix.length() > 1 ? "prefix" : "#none#"),
+            (suffix.length() > 1 ? "suffix" : "#none#"),
+            (!filesName.isEmpty() ? "filesName" : "#none#"),
             "beginDate",
             "endDate"
         };
         Object[] bdObjects = new Object[]{
             getRepository(),
-            getPrefixFile(),
-            getSuffixFile(),
+            prefix,
+            suffix,
+            filesName,
             getBeginDate(),
             getEndDate()
         };
@@ -91,12 +110,14 @@ public class UserModifySameFileInDateServices extends AbstractMatrizServices {
     }
 
     private List<AuxUserUserFile> removeDuplicade(List<AuxUserUserFile> result) {
-        List<AuxUserUserFile> newResult = new ArrayList<>();
+        List<AuxUserUserFile> newResult = new ArrayList<>(result.size());
         for (AuxUserUserFile aux : result) {
             if (!newResult.contains(aux)) {
                 newResult.add(aux);
             }
         }
+        result.clear();
+        result = null;
         return newResult;
     }
 }

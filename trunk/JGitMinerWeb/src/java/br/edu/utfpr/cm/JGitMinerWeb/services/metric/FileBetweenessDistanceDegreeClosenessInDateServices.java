@@ -5,9 +5,9 @@
 package br.edu.utfpr.cm.JGitMinerWeb.services.metric;
 
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.matriz.EntityMatriz;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.matriz.EntityMatrizNode;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
+import br.edu.utfpr.cm.JGitMinerWeb.model.matriz.EntityMatriz;
+import br.edu.utfpr.cm.JGitMinerWeb.model.matriz.EntityMatrizNode;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.UserCommentedSameFileInDateServices;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.UserModifySameFileInDateServices;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxFileCountSum;
@@ -15,6 +15,7 @@ import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxUserFile;
 import br.edu.utfpr.cm.JGitMinerWeb.services.metric.auxiliary.AuxFileMetrics;
 import br.edu.utfpr.cm.JGitMinerWeb.services.metric.auxiliary.AuxUserMetrics;
 import br.edu.utfpr.cm.JGitMinerWeb.util.JsfUtil;
+import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
 import edu.uci.ics.jung.algorithms.scoring.BetweennessCentrality;
 import edu.uci.ics.jung.algorithms.scoring.ClosenessCentrality;
 import edu.uci.ics.jung.algorithms.scoring.DegreeScorer;
@@ -35,12 +36,12 @@ public class FileBetweenessDistanceDegreeClosenessInDateServices extends Abstrac
 
     private EntityRepository repository;
 
-    public FileBetweenessDistanceDegreeClosenessInDateServices(GenericDao dao) {
-        super(dao);
+    public FileBetweenessDistanceDegreeClosenessInDateServices(GenericDao dao, OutLog out) {
+        super(dao, out);
     }
 
-    public FileBetweenessDistanceDegreeClosenessInDateServices(GenericDao dao, EntityMatriz matriz, Map params) {
-        super(dao, matriz, params);
+    public FileBetweenessDistanceDegreeClosenessInDateServices(GenericDao dao, EntityMatriz matriz, Map params, OutLog out) {
+        super(dao, matriz, params, out);
     }
 
     public Date getFutureBeginDate() {

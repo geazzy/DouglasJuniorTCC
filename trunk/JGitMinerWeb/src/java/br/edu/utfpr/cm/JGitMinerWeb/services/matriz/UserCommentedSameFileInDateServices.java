@@ -5,9 +5,9 @@
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz;
 
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxUserUserFile;
-import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxUserUserFileMilestone;
+import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -18,12 +18,12 @@ import java.util.Map;
  */
 public class UserCommentedSameFileInDateServices extends AbstractMatrizServices {
 
-    public UserCommentedSameFileInDateServices(GenericDao dao) {
-        super(dao);
+    public UserCommentedSameFileInDateServices(GenericDao dao, OutLog out) {
+        super(dao, out);
     }
 
-    public UserCommentedSameFileInDateServices(GenericDao dao, EntityRepository repository, Map params) {
-        super(dao, repository, params);
+    public UserCommentedSameFileInDateServices(GenericDao dao, EntityRepository repository, Map params, OutLog out) {
+        super(dao, repository, params, out);
     }
 
     private String getPrefixFile() {
@@ -44,6 +44,17 @@ public class UserCommentedSameFileInDateServices extends AbstractMatrizServices 
 
     private Boolean isIncludeIssueComments() {
         return Boolean.parseBoolean(params.get("includeIssueComments") + "");
+    }
+
+    private List<String> getFilesName() {
+        List<String> filesName = new ArrayList<>();
+        for (String fileName : (params.get("filesName") + "").split("\n")) {
+            fileName = fileName.trim();
+            if (!fileName.isEmpty()) {
+                filesName.add(fileName);
+            }
+        }
+        return filesName;
     }
 
     @Override
@@ -68,19 +79,25 @@ public class UserCommentedSameFileInDateServices extends AbstractMatrizServices 
         List<AuxUserUserFile> result = new ArrayList<>();
         List<AuxUserUserFile> temp;
 
+        List<String> filesName = getFilesName();
+        String prefix = getPrefixFile();
+        String suffix = getSuffixFile();
+
         String[] bdParams = new String[]{
             "repo",
             "beginDate",
             "endDate",
-            "prefix",
-            "suffix"
+            (prefix.length() > 1 ? "prefix" : "#none#"),
+            (suffix.length() > 1 ? "suffix" : "#none#"),
+            (!filesName.isEmpty() ? "filesName" : "#none#")
         };
         Object[] bdObjects = new Object[]{
             getRepository(),
             getBeginDate(),
             getEndDate(),
-            getPrefixFile(),
-            getSuffixFile()
+            prefix,
+            suffix,
+            filesName
         };
 
         if (isIncludeFileComments()) {
@@ -93,10 +110,11 @@ public class UserCommentedSameFileInDateServices extends AbstractMatrizServices 
                     + "rc2.repository = :repo AND "
                     + "rc.commit.committer.dateCommitUser BETWEEN :beginDate AND :endDate AND "
                     + "rc2.commit.committer.dateCommitUser BETWEEN :beginDate AND :endDate AND "
-                    + "cm.pathCommitComment LIKE :prefix AND "
-                    + "cm.pathCommitComment LIKE :suffix AND "
-                    + "cm2.pathCommitComment LIKE :prefix AND "
-                    + "cm2.pathCommitComment LIKE :suffix AND "
+                    + (prefix.length() > 1 ? "cm.pathCommitComment LIKE :prefix AND " : "")
+                    + (prefix.length() > 1 ? "cm2.pathCommitComment LIKE :prefix AND " : "")
+                    + (suffix.length() > 1 ? "cm.pathCommitComment LIKE :suffix AND " : "")
+                    + (suffix.length() > 1 ? "cm2.pathCommitComment LIKE :suffix AND " : "")
+                    + (!filesName.isEmpty() ? "cm.pathCommitComment IN :filesName AND " : "")
                     + "cm.pathCommitComment = cm2.pathCommitComment AND "
                     + "cm.user <> cm2.user ";
 
@@ -123,10 +141,11 @@ public class UserCommentedSameFileInDateServices extends AbstractMatrizServices 
                     + "rc2.commit.committer.dateCommitUser BETWEEN :beginDate AND :endDate AND "
                     + "cm.pathCommitComment IS NULL AND "
                     + "cm2.pathCommitComment IS NULL AND "
-                    + "f.filename LIKE :prefix AND "
-                    + "f.filename LIKE :suffix AND "
-                    + "f2.filename LIKE :prefix AND "
-                    + "f2.filename LIKE :suffix AND "
+                    + (prefix.length() > 1 ? "f.filename LIKE :prefix AND " : "")
+                    + (prefix.length() > 1 ? "f2.filename LIKE :prefix AND " : "")
+                    + (suffix.length() > 1 ? "f.filename LIKE :suffix AND " : "")
+                    + (suffix.length() > 1 ? "f2.filename LIKE :suffix AND " : "")
+                    + (!filesName.isEmpty() ? "f.filename IN :filesName AND " : "")
                     + "f.filename = f2.filename AND "
                     + "cm.user <> cm2.user ";
 
@@ -151,12 +170,13 @@ public class UserCommentedSameFileInDateServices extends AbstractMatrizServices 
                     + "p2.repository = :repo AND "
                     + "p.createdAt BETWEEN :beginDate AND :endDate AND "
                     + "p2.createdAt BETWEEN :beginDate AND :endDate AND "
-                    + "f.filename = f2.filename AND "
                     + "cm.user <> cm2.user AND "
-                    + "f.filename LIKE :prefix AND "
-                    + "f.filename LIKE :suffix AND "
-                    + "f2.filename LIKE :prefix AND "
-                    + "f2.filename LIKE :suffix ";
+                    + (prefix.length() > 1 ? "f.filename LIKE :prefix AND " : "")
+                    + (prefix.length() > 1 ? "f2.filename LIKE :prefix AND " : "")
+                    + (suffix.length() > 1 ? "f.filename LIKE :suffix AND " : "")
+                    + (suffix.length() > 1 ? "f2.filename LIKE :suffix AND " : "")
+                    + (!filesName.isEmpty() ? "f.filename IN :filesName AND " : "")
+                    + "f.filename = f2.filename ";
 
             System.out.println(jpql);
 

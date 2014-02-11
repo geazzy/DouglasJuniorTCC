@@ -5,7 +5,7 @@
  */
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary;
 
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityCommitFile;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityCommitFile;
 import com.google.common.base.Strings;
 import java.util.ArrayList;
 import java.util.HashSet;

@@ -6,10 +6,12 @@
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz;
 
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxNumberOfDevUser;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxUserComments;
+import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
 import com.google.common.collect.Sets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -21,14 +23,17 @@ public class NumberOfDevUserPerIssueServices extends AbstractMatrizServices {
 
     private List<AuxNumberOfDevUser> issueList;
 
-    public NumberOfDevUserPerIssueServices(GenericDao dao) {
-        super(dao);
+    public NumberOfDevUserPerIssueServices(GenericDao dao, OutLog out) {
+        super(dao, out);
+        issueList = new ArrayList<>();
     }
 
-    public NumberOfDevUserPerIssueServices(GenericDao dao, EntityRepository repository, Map params) {
-        super(dao, repository, params);
+    public NumberOfDevUserPerIssueServices(GenericDao dao, EntityRepository repository, Map params, OutLog out) {
+        super(dao, repository, params, out);
+        issueList = new ArrayList<>();
     }
 
+    
     @Override
     public void run() {
 
@@ -54,7 +59,7 @@ public class NumberOfDevUserPerIssueServices extends AbstractMatrizServices {
 
     @Override
     public String getHeadCSV() {
-        return "IssueNumber;dev;users;url";
+        return "IssueNumber;dev;users;total;url";
     }
 
     private void getIssuesByMilestone() {
@@ -184,6 +189,7 @@ public class NumberOfDevUserPerIssueServices extends AbstractMatrizServices {
                     issue.incrementarNumeroUsers();
                 }
             }
+            issue.setTotalOfAttendees();
 
         }
     }

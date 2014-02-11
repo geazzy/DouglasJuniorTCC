@@ -7,7 +7,8 @@ package br.edu.utfpr.cm.JGitMinerWeb.services.matriz;
 
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxNumberOfMessages;
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
+import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,15 +20,15 @@ import java.util.Map;
  */
 public class NumberOfMessagesPerIssueServices extends AbstractMatrizServices {
 
-    public NumberOfMessagesPerIssueServices(GenericDao dao) {
-        super(dao);
+    public NumberOfMessagesPerIssueServices(GenericDao dao, OutLog out) {
+        super(dao, out);
     }
 
-    public NumberOfMessagesPerIssueServices(GenericDao dao, EntityRepository repository, Map params) {
-        super(dao, repository, params);
+    public NumberOfMessagesPerIssueServices(GenericDao dao, EntityRepository repository, Map params, OutLog out) {
+        super(dao, repository, params, out);
     }
 
-    
+ 
 
     @Override
     public void run() {

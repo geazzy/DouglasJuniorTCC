@@ -5,7 +5,7 @@
  */
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary;
 
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityComment;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityComment;
 import com.google.common.base.Strings;
 import java.util.List;
 

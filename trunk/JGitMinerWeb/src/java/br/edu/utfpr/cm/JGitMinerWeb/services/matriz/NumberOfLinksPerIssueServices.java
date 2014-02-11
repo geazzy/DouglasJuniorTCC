@@ -6,8 +6,10 @@
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz;
 
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxNumberOfLinks;
+import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,16 +21,19 @@ import java.util.Map;
 public class NumberOfLinksPerIssueServices extends AbstractMatrizServices {
 
     private List<AuxNumberOfLinks> issueList;
+      
 
-    public NumberOfLinksPerIssueServices(GenericDao dao) {
-        super(dao);
+    public NumberOfLinksPerIssueServices(GenericDao dao, OutLog out) {
+        super(dao, out);
         this.issueList = new ArrayList<>();
     }
 
-    public NumberOfLinksPerIssueServices(GenericDao dao, EntityRepository repository, Map params) {
-        super(dao, repository, params);
+    public NumberOfLinksPerIssueServices(GenericDao dao, EntityRepository repository, Map params, OutLog out) {
+        super(dao, repository, params, out);
         this.issueList = new ArrayList<>();
     }
+
+ 
 
     @Override
     public void run() {

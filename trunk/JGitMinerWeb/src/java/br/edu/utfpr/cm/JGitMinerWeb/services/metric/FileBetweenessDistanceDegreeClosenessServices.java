@@ -5,9 +5,9 @@
 package br.edu.utfpr.cm.JGitMinerWeb.services.metric;
 
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.matriz.EntityMatriz;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.matriz.EntityMatrizNode;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
+import br.edu.utfpr.cm.JGitMinerWeb.model.matriz.EntityMatriz;
+import br.edu.utfpr.cm.JGitMinerWeb.model.matriz.EntityMatrizNode;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.UserModifySameFileInDateServices;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.UserModifySameFileInMilestoneServices;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxFileCountSum;
@@ -15,6 +15,7 @@ import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxUserFile;
 import br.edu.utfpr.cm.JGitMinerWeb.services.metric.auxiliary.AuxFileMetrics;
 import br.edu.utfpr.cm.JGitMinerWeb.services.metric.auxiliary.AuxUserMetrics;
 import br.edu.utfpr.cm.JGitMinerWeb.util.JsfUtil;
+import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
 import br.edu.utfpr.cm.JGitMinerWeb.util.Util;
 import edu.uci.ics.jung.algorithms.scoring.BetweennessCentrality;
 import edu.uci.ics.jung.algorithms.scoring.ClosenessCentrality;
@@ -35,12 +36,12 @@ public class FileBetweenessDistanceDegreeClosenessServices extends AbstractMetri
 
     private EntityRepository repository;
 
-    public FileBetweenessDistanceDegreeClosenessServices(GenericDao dao) {
-        super(dao);
+    public FileBetweenessDistanceDegreeClosenessServices(GenericDao dao, OutLog out) {
+        super(dao, out);
     }
 
-    public FileBetweenessDistanceDegreeClosenessServices(GenericDao dao, EntityMatriz matriz, Map params) {
-        super(dao, matriz, params);
+    public FileBetweenessDistanceDegreeClosenessServices(GenericDao dao, EntityMatriz matriz, Map params, OutLog out) {
+        super(dao, matriz, params, out);
     }
 
     /*

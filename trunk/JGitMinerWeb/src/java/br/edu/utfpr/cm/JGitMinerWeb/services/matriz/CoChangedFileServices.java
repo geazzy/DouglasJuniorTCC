@@ -6,12 +6,13 @@
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz;
 
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityCommitFile;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityPullRequest;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepository;
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityRepositoryCommit;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityCommitFile;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityPullRequest;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepositoryCommit;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxCoChanged;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxCoChangedFiles;
+import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,19 +27,18 @@ public class CoChangedFileServices extends AbstractMatrizServices {
     List<AuxCoChangedFiles> changedList;
     private List<AuxCoChanged> coChangedList;
 
-    public CoChangedFileServices(GenericDao dao) {
-        super(dao);
-        changedList = new ArrayList<>();
-        coChangedList = new ArrayList<>();
-
-    }
-
-    public CoChangedFileServices(GenericDao dao, EntityRepository repository, Map params) {
-        super(dao, repository, params);
+    public CoChangedFileServices(GenericDao dao, OutLog out) {
+        super(dao, out);
         changedList = new ArrayList<>();
         coChangedList = new ArrayList<>();
     }
 
+    public CoChangedFileServices(GenericDao dao, EntityRepository repository, Map params, OutLog out) {
+        super(dao, repository, params, out);
+        changedList = new ArrayList<>();
+        coChangedList = new ArrayList<>();
+    }
+   
     @Override
     public void run() {
         if (getRepository() == null) {

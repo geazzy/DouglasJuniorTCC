@@ -5,7 +5,7 @@
  */
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary;
 
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityUser;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityUser;
 import java.util.Objects;
 import javax.persistence.Entity;
 

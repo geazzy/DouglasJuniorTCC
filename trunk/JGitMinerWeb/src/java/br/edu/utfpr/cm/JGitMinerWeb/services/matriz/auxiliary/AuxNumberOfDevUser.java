@@ -5,7 +5,7 @@
  */
 package br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary;
 
-import br.edu.utfpr.cm.JGitMinerWeb.pojo.miner.EntityUser;
+import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityUser;
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +19,7 @@ public class AuxNumberOfDevUser {
 
     private Integer issueNumber;
     private String url;
+    private Integer numberOfAttendees;
     private Integer numberOfUsers;
     private Integer numberOfDevs;
     private Integer commentsCount;
@@ -29,6 +30,7 @@ public class AuxNumberOfDevUser {
         this.issueNumber = issueNumber;
         this.url = url;
         this.commentsCount = commentsCount;
+        this.numberOfAttendees = 0;
         this.numberOfDevs = 0;
         this.numberOfUsers = 0;
         this.commentsAuthorsList = Sets.newHashSet();
@@ -97,7 +99,7 @@ public class AuxNumberOfDevUser {
 //    }
     @Override
     public String toString() {
-        return issueNumber + ";" + numberOfDevs  + ";" + numberOfUsers + ";" + url;
+        return issueNumber + ";" + numberOfDevs  + ";" + numberOfUsers + ";" + numberOfAttendees + ";" + url;
         //return issueNumber + ";" + commentsCount + ";" + numberOfUsers + ";" + url;
     }
 
@@ -111,6 +113,10 @@ public class AuxNumberOfDevUser {
 
     public void incrementarNumeroUsers() {
         this.numberOfUsers++;
+    }
+
+    public void setTotalOfAttendees() {
+        this.numberOfAttendees = this.numberOfDevs+this.numberOfUsers;
     }
 
 }
