@@ -24,19 +24,18 @@ import java.util.regex.PatternSyntaxException;
 
 public class UrlValidator {
 
-        private static final String padrao = "(\\[\\w*\\])?\\(?\\b(http://|https://|www[.])[-A-Za-z0-9+&@#/%?=~_()|!:,.;]*[-A-Za-z0-9+&@#/%=~_()|]";
-
+    private static final String padrao = "(\\[\\w*\\])?\\(?\\b(http://|https://|www[.])[-A-Za-z0-9+&@#/%?=~_()|!:,.;]*[-A-Za-z0-9+&@#/%=~_()|]";
 
     private static Boolean isURL(String value) {
 
-            Pattern pattern = Pattern.compile(padrao);
-            Matcher matcher = pattern.matcher(value);
+        Pattern pattern = Pattern.compile(padrao);
+        Matcher matcher = pattern.matcher(value);
 
-            return matcher.matches();
+        return matcher.matches();
 
     }
 
-    public static Integer urlInString(String linha){
+    public static Integer urlInString(String linha) {
 
         Integer quantidadeDeUrl = new Integer(0);
 
@@ -47,11 +46,11 @@ public class UrlValidator {
             token = tokens.next();
 
             if (isURL(token)) {
-                try {
-                    escrever(token, "/home/geazzy/url.txt");
-                } catch (IOException ex) {
-                    Logger.getLogger(UrlValidator.class.getName()).log(Level.SEVERE, null, ex);
-                }
+//                try {
+//                    escrever(token, "/home/geazzy/url.txt");
+//                } catch (IOException ex) {
+//                    Logger.getLogger(UrlValidator.class.getName()).log(Level.SEVERE, null, ex);
+//                }
                 quantidadeDeUrl++;
             }
         }
@@ -60,19 +59,18 @@ public class UrlValidator {
         return quantidadeDeUrl;
     }
 
-    private static void escrever(String valor, String file) throws IOException {
-        
-        Path txt = Paths.get(file);
-        
-        if(!Files.exists(txt)){
-            Files.createFile(txt);
-        }
-        
-        List<String> linhas = Files.readAllLines(txt, Charset.defaultCharset());
-        
-        linhas.add(valor);
-        Files.write(txt, linhas, Charset.defaultCharset());
-       
-
-    }
+//    private static void escrever(String valor, String file) throws IOException {
+//
+//        Path txt = Paths.get(file);
+//
+//        if (!Files.exists(txt)) {
+//            Files.createFile(txt);
+//        }
+//
+//        List<String> linhas = Files.readAllLines(txt, Charset.defaultCharset());
+//
+//        linhas.add(valor);
+//        Files.write(txt, linhas, Charset.defaultCharset());
+//
+//    }
 }
