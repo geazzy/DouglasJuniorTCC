@@ -29,10 +29,6 @@ public class FileModifiedTogetherOnIssueInMilestoneServices extends AbstractMatr
         super(dao, repository, params, out);
     }
 
-    public int getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
-    }
 
     private String getPrefixFile() {
         return params.get("prefixFile") + "%";
