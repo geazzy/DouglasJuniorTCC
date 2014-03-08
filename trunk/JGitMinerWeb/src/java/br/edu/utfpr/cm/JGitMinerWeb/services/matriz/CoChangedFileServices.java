@@ -10,7 +10,7 @@ import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityCommitFile;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityPullRequest;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepositoryCommit;
-import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxCoChanged;
+import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxPairOfFiles;
 import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import java.util.Set;
 public class CoChangedFileServices extends AbstractMatrizServices {
 
     private Map<Integer, List<EntityCommitFile>> changedList;
-    private List<AuxCoChanged> coChangedList;
+    private List<AuxPairOfFiles> coChangedList;
 
     public CoChangedFileServices(GenericDao dao, OutLog out) {
         super(dao, out);
@@ -59,27 +59,28 @@ public class CoChangedFileServices extends AbstractMatrizServices {
             }
 
             addToEntityMatrizNodeList(coChangedList);
-           
-            Set<AuxCoChanged> auxset = new HashSet<>(coChangedList);
-            
-            System.out.println("cochange size list: "+ coChangedList.size());
-            System.out.println("auxset size set: "+ auxset.size());
-                        
+
+            Set<AuxPairOfFiles> auxset = new HashSet<>(coChangedList);
+
+            System.out.println("cochange size list: " + coChangedList.size());
+            System.out.println("auxset size set: " + auxset.size());
+
         }
 
     }
 
-    private void setPairOfCoChangedFilesPerPullRequest(List<EntityCommitFile> arquivos, Integer issueNumber) {
+    private void setPairOfCoChangedFilesPerPullRequest(List<EntityCommitFile> files, Integer issueNumber) {
 
-        for (int i = 0; i < arquivos.size(); i++) {
+        for (int i = 0; i < files.size(); i++) {
 
-            for (int next = i + 1; next < arquivos.size(); next++) {
+            for (int next = i + 1; next < files.size(); next++) {
 
-                if (!arquivos.get(i).getFilename().equals(arquivos.get(next).getFilename())) {
-                    coChangedList.add(new AuxCoChanged(issueNumber,
-                            arquivos.get(i).getFilename(), arquivos.get(next).getFilename(),
-                            arquivos.get(i).getRepositoryCommit().getSha(),
-                            arquivos.get(next).getRepositoryCommit().getSha()));
+                //forma par de arquivo SOMENTE quando eles pertencem ao mesmo commit
+                if (files.get(i).getRepositoryCommit().getSha().equals(files.get(next).getRepositoryCommit().getSha())) {
+                    coChangedList.add(new AuxPairOfFiles(issueNumber,
+                            files.get(i).getFilename(), files.get(next).getFilename(),
+                            files.get(i).getRepositoryCommit().getSha(),
+                            files.get(next).getRepositoryCommit().getSha()));
                 }
 
             }
@@ -92,11 +93,11 @@ public class CoChangedFileServices extends AbstractMatrizServices {
 
             for (EntityRepositoryCommit repositoryCommit : pullrequest.getRepositoryCommits()) {
 
-                    if (repositoryCommit.getFiles().size() > 100) {
-                        out.printLog("Commit IGNORADO - muitos arquivos: " + repositoryCommit.getUrl() + " tamanho: " + repositoryCommit.getFiles().size());
-                    } else {
-                        addFilesToMap(pullrequest.getNumber(), repositoryCommit.getFiles());
-                    }
+                if (repositoryCommit.getFiles().size() > 100) {
+                    out.printLog("Commit IGNORADO - muitos arquivos: " + repositoryCommit.getUrl() + " tamanho: " + repositoryCommit.getFiles().size());
+                } else {
+                    addFilesToMap(pullrequest.getNumber(), repositoryCommit.getFiles());
+                }
             }
         }
     }
@@ -136,7 +137,7 @@ public class CoChangedFileServices extends AbstractMatrizServices {
 
     @Override
     public String getHeadCSV() {
-        return "issueNumber;arquivo1;arquivo2;idCommitArq1;idCommitArq2;";
+        return "issueNumber;arquivo1;arquivo2;shaRepoCommit1;shaRepoCommit2;";
     }
 
 }

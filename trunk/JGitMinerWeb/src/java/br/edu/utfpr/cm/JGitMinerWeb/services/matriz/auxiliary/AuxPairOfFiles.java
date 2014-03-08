@@ -11,7 +11,7 @@ import java.util.Objects;
  *
  * @author geazzy
  */
-public class AuxCoChanged {
+public class AuxPairOfFiles {
 
     private Integer issueNumber;
     private String arq1;
@@ -20,7 +20,7 @@ public class AuxCoChanged {
     private String shaCommitFile2;
 
 
-    public AuxCoChanged(Integer issueNumber, String arq1, String arq2, String shaCommitArq1, String shaCommitArq2) {
+    public AuxPairOfFiles(Integer issueNumber, String arq1, String arq2, String shaCommitArq1, String shaCommitArq2) {
         this.issueNumber = issueNumber;
         this.arq1 = arq1;
         this.shaCommitFile1 = shaCommitArq1;
@@ -88,7 +88,7 @@ public class AuxCoChanged {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final AuxCoChanged other = (AuxCoChanged) obj;
+        final AuxPairOfFiles other = (AuxPairOfFiles) obj;
         
         if (Objects.equals(this.arq1, other.arq1)) {
 
