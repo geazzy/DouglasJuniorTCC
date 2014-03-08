@@ -76,8 +76,7 @@ public class AuxCoChanged {
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 67 * hash + Objects.hashCode(this.arq1);
-        hash = 67 * hash + Objects.hashCode(this.arq2);
+        hash = 67 * hash + Objects.hashCode(this.arq1)+Objects.hashCode(this.arq2);
         return hash;
     }
 
