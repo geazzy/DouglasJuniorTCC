@@ -103,15 +103,6 @@ public class EntityPullRequest implements InterfaceEntity, Serializable {
     @JoinColumn(name = "repository_id")
     private EntityRepository repository;
     @OneToMany(fetch = FetchType.LAZY)
-        @JoinTable(name = "gitpullrequest_gitrepositorycommit",
-            joinColumns = {
-                @JoinColumn(name = "entitypullrequest_id", referencedColumnName = "id")},
-            inverseJoinColumns = {  
-                @JoinColumn(name = "repositorycommits_id", referencedColumnName = "id")},
-            indexes = {
-                @Index(columnList = "entitypullrequest_id"),
-                @Index(columnList = "repositorycommits_id")
-            })
     private Set<EntityRepositoryCommit> repositoryCommits;
 
     public EntityPullRequest() {
