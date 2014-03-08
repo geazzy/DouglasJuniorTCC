@@ -64,7 +64,9 @@ public class CoChangedFileServices extends AbstractMatrizServices {
                         " arquivos associados: "+ changedList.get((Integer)key).size());  
                 
                 for (EntityCommitFile file : changedList.get((Integer)key)) {
-                  
+//                    for (int i = 0; i < changedList.get((Integer)key).size(); i++) {
+//                  EntityCommitFile file =  changedList.get((Integer)key).get(i);
+                    
                     System.out.println("===============================================================================");
                     System.out.println("file name: "+file.getFilename());
                     System.out.println("url comit: "+ file.getRepositoryCommit().getUrl());
@@ -76,6 +78,7 @@ public class CoChangedFileServices extends AbstractMatrizServices {
                     System.out.println("data da MINERACAO: "+ file.getRepositoryCommit().getCommit().getMineredAt());
                   
                     System.out.println("-----------------------------------------");
+                    
                 }
             }
    
@@ -110,6 +113,7 @@ public class CoChangedFileServices extends AbstractMatrizServices {
             for (EntityRepositoryCommit repositoryCommit : pullrequest.getRepositoryCommits()) {
                 
                 if (!repositoryCommit.getFiles().isEmpty()) {
+                    System.out.println("commit url: "+repositoryCommit.getUrl());
                     addFilesToMap(pullrequest.getNumber(), repositoryCommit.getFiles());
                 }else{
                     System.out.println("issue sem arquivo: " +pullrequest.getNumber()+ 
@@ -129,6 +133,7 @@ public class CoChangedFileServices extends AbstractMatrizServices {
         if(changedList.containsKey(pullNumber)){
             
             List<EntityCommitFile> files = changedList.get(pullNumber);
+            System.out.println("pullNumber "+ pullNumber);
             System.out.println("Arqs ANTES de concatenar:" +files.size());
             files.addAll(repositoryCommitFiles);
             System.out.println("Arqs DEPOIS de concatenar:" +files.size());

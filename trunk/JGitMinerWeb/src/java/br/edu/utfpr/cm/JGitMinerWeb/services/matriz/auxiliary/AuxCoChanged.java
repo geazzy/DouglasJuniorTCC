@@ -27,7 +27,7 @@ public class AuxCoChanged {
 
     @Override
     public String toString() {
-        return issueNumber + ";" + urlCommit + ";" + arq1 + ";" + arq2;
+        return issueNumber + ";" + arq1 + ";" + arq2 + ";" + urlCommit;
     }
     
     
