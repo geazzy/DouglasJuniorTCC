@@ -77,9 +77,9 @@ public class NumberOfCollaboratorsInIssueServices extends AbstractMatrizServices
         return "issueNumber;numberOfCollabs;url;";
     }
 
-    private void setCollabList(List<EntityPullRequest> pullRequestByMilestone) {
+    private void setCollabList(List<EntityPullRequest> pullRequestList) {
         
-        for (EntityPullRequest entityPullRequest : pullRequestByMilestone) {
+        for (EntityPullRequest entityPullRequest : pullRequestList){
              collabList.add(new AuxCollabPerIssue(entityPullRequest.getNumber(),
                    entityPullRequest.getIssue().getUserIssue(),
                    entityPullRequest.getIssue().getComments(), 

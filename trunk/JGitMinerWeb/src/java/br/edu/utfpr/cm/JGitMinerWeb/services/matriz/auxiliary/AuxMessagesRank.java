@@ -30,9 +30,13 @@ public class AuxMessagesRank {
         for (EntityPullRequest entityPullRequest : pullRequestList) {
 
             addUserToRank(entityPullRequest.getUser());
-
-            for (EntityComment comments : entityPullRequest.getIssue().getComments()) {
-                addUserToRank(comments.getUser());
+          
+            if (entityPullRequest.getIssue() == null) {
+                System.out.println("null issue: " + entityPullRequest);
+            } else {
+                for (EntityComment comments : entityPullRequest.getIssue().getComments()) {
+                    addUserToRank(comments.getUser());
+                }
             }
         }
     }
@@ -42,7 +46,7 @@ public class AuxMessagesRank {
     }
 
     private void addUserToRank(EntityUser user) {
-        
+
         if (rank.containsKey(user)) {
 
             rank.put(user, rank.get(user) + 1);

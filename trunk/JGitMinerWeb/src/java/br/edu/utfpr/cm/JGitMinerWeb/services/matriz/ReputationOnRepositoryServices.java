@@ -16,7 +16,6 @@ import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxMessagesRank;
 import br.edu.utfpr.cm.JGitMinerWeb.services.matriz.auxiliary.AuxReputation;
 import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -30,12 +29,12 @@ public class ReputationOnRepositoryServices extends AbstractMatrizServices {
 
     public ReputationOnRepositoryServices(GenericDao dao, OutLog out) {
         super(dao, out);
-        result = new ArrayList<AuxReputation>();
+        result = new ArrayList<>();
     }
 
     public ReputationOnRepositoryServices(GenericDao dao, EntityRepository repository, Map params, OutLog out) {
         super(dao, repository, params, out);
-        result = new ArrayList<AuxReputation>();
+        result = new ArrayList<>();
     }
 
     @Override
