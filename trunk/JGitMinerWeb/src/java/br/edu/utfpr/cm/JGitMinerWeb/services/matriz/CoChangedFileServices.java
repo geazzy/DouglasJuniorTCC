@@ -15,7 +15,6 @@ import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,7 +25,7 @@ import java.util.Set;
  */
 public class CoChangedFileServices extends AbstractMatrizServices {
 
-    private Map<Integer, List<EntityCommitFile>> changedList;
+    private Map<Long, List<EntityCommitFile>> changedList;
     private List<AuxPairOfFiles> coChangedList;
 
     public CoChangedFileServices(GenericDao dao, OutLog out) {
@@ -53,23 +52,23 @@ public class CoChangedFileServices extends AbstractMatrizServices {
                 getRepositoryCommitsFromPullRequest(getPullRequestByDate());
             }
 
-            for (Object issueNumber : changedList.keySet()) {
+            for (Object idPullRequest : changedList.keySet()) {
 
-                setPairOfCoChangedFilesPerPullRequest(changedList.get((Integer) issueNumber), (Integer) issueNumber);
+                setPairOfCoChangedFilesPerPullRequest(changedList.get((Long)idPullRequest), (Long)idPullRequest);
             }
 
             addToEntityMatrizNodeList(coChangedList);
 
-            Set<AuxPairOfFiles> auxset = new HashSet<>(coChangedList);
-
-            System.out.println("cochange size list: " + coChangedList.size());
-            System.out.println("auxset size set: " + auxset.size());
+//            Set<AuxPairOfFiles> auxset = new HashSet<>(coChangedList);
+//
+//            System.out.println("cochange size list: " + coChangedList.size());
+//            System.out.println("auxset size set: " + auxset.size());
 
         }
 
     }
 
-    private void setPairOfCoChangedFilesPerPullRequest(List<EntityCommitFile> files, Integer issueNumber) {
+    private void setPairOfCoChangedFilesPerPullRequest(List<EntityCommitFile> files, Long idPullRequest) {
 
         for (int i = 0; i < files.size(); i++) {
 
@@ -77,7 +76,7 @@ public class CoChangedFileServices extends AbstractMatrizServices {
 
                 //forma par de arquivo SOMENTE quando eles pertencem ao mesmo commit
                 if (files.get(i).getRepositoryCommit().getSha().equals(files.get(next).getRepositoryCommit().getSha())) {
-                    coChangedList.add(new AuxPairOfFiles(issueNumber,
+                    coChangedList.add(new AuxPairOfFiles(idPullRequest,
                             files.get(i).getFilename(), files.get(next).getFilename(),
                             files.get(i).getRepositoryCommit().getSha(),
                             files.get(next).getRepositoryCommit().getSha()));
@@ -96,22 +95,22 @@ public class CoChangedFileServices extends AbstractMatrizServices {
                 if (repositoryCommit.getFiles().size() > 100) {
                     out.printLog("Commit IGNORADO - muitos arquivos: " + repositoryCommit.getUrl() + " tamanho: " + repositoryCommit.getFiles().size());
                 } else {
-                    addFilesToMap(pullrequest.getNumber(), repositoryCommit.getFiles());
+                    addFilesToMap(pullrequest.getIdPullRequest(), repositoryCommit.getFiles());
                 }
             }
         }
     }
 
-    private void addFilesToMap(Integer pullNumber, Set<EntityCommitFile> repositoryCommitFiles) {
+    private void addFilesToMap(Long idPullRequest, Set<EntityCommitFile> repositoryCommitFiles) {
 
-        if (changedList.containsKey(pullNumber)) {
+        if (changedList.containsKey(idPullRequest)) {
 
-            List<EntityCommitFile> files = changedList.get(pullNumber);
+            List<EntityCommitFile> files = changedList.get(idPullRequest);
             files.addAll(repositoryCommitFiles);
-            changedList.put(pullNumber, files);
+            changedList.put(idPullRequest, files);
 
         } else {
-            changedList.put(pullNumber, Lists.newArrayList(repositoryCommitFiles));
+            changedList.put(idPullRequest, Lists.newArrayList(repositoryCommitFiles));
         }
 
     }
@@ -137,7 +136,7 @@ public class CoChangedFileServices extends AbstractMatrizServices {
 
     @Override
     public String getHeadCSV() {
-        return "issueNumber;arquivo1;arquivo2;shaRepoCommit1;shaRepoCommit2;";
+        return "idPullRequest;arquivo1;arquivo2;shaRepoCommit1;shaRepoCommit2;";
     }
 
 }

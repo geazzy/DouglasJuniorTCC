@@ -13,15 +13,15 @@ import java.util.Objects;
  */
 public class AuxPairOfFiles {
 
-    private Integer issueNumber;
+    private Long idPullRequest;
     private String arq1;
     private String shaCommitFile1;
     private String arq2;
     private String shaCommitFile2;
 
 
-    public AuxPairOfFiles(Integer issueNumber, String arq1, String arq2, String shaCommitArq1, String shaCommitArq2) {
-        this.issueNumber = issueNumber;
+    public AuxPairOfFiles(Long idPullRequest, String arq1, String arq2, String shaCommitArq1, String shaCommitArq2) {
+        this.idPullRequest = idPullRequest;
         this.arq1 = arq1;
         this.shaCommitFile1 = shaCommitArq1;
         this.arq2 = arq2;
@@ -30,15 +30,15 @@ public class AuxPairOfFiles {
 
     @Override
     public String toString() {
-        return issueNumber + ";" + arq1 + ";" + arq2 + ";" + shaCommitFile1 + ";" + shaCommitFile2;
+        return idPullRequest + ";" + arq1 + ";" + arq2 + ";" + shaCommitFile1 + ";" + shaCommitFile2;
     }
 
-    public Integer getIssueNumber() {
-        return issueNumber;
+    public Long getIdPullRequest() {
+        return idPullRequest;
     }
 
-    public void setIssueNumber(Integer issueNumber) {
-        this.issueNumber = issueNumber;
+    public void setIdPullRequest(Long idPullRequest) {
+        this.idPullRequest = idPullRequest;
     }
 
     public String getArq1() {
