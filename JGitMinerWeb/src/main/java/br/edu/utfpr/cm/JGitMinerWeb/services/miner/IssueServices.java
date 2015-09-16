@@ -9,14 +9,18 @@ import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityIssue;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.util.JsfUtil;
 import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import org.eclipse.egit.github.core.Issue;
-import org.eclipse.egit.github.core.Repository;
-import org.eclipse.egit.github.core.service.IssueService;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.kohsuke.github.GHIssue;
+import org.kohsuke.github.GHIssueState;
+import org.kohsuke.github.GHRepository;
 
 /**
  *
@@ -32,25 +36,25 @@ public class IssueServices implements Serializable {
         return null;
     }
 
-    public static List<Issue> getGitIssuesFromRepository(Repository gitRepo, boolean open, boolean closed, OutLog out) {
-        List<Issue> issues = new ArrayList<Issue>();
+    public static List<GHIssue> getGitIssuesFromRepository(GHRepository gitRepo, boolean open, boolean closed, OutLog out) {
+        List<GHIssue> issues = new ArrayList<>();
         try {
-            IssueService issueServ = new IssueService(AuthServices.getGitHubClient());
-            HashMap<String, String> params = new HashMap<String, String>();
+         
             if (open) {
-                List<Issue> opensIssues;
+                List<GHIssue> opensIssues;
                 out.printLog("Baixando Issues Abertas...\n");
-                params.put("state", "open");
-                opensIssues = issueServ.getIssues(gitRepo, params);
+               
+                opensIssues = AuthServices.getGitHubClient().getRepository(gitRepo.getFullName()).getIssues(GHIssueState.OPEN);
+               
                 out.printLog(opensIssues.size() + " Issues abertas baixadas!");
                 issues.addAll(opensIssues);
             }
             if (closed) {
-                List<Issue> clodesIssues;
-                params = new HashMap<String, String>();
+                List<GHIssue> clodesIssues;
+               
                 out.printLog("Baixando Issues Fechadas...\n");
-                params.put("state", "closed");
-                clodesIssues = issueServ.getIssues(gitRepo, params);
+               
+                clodesIssues = AuthServices.getGitHubClient().getRepository(gitRepo.getFullName()).getIssues(GHIssueState.CLOSED);
                 out.printLog(clodesIssues.size() + " Issues fechadas baixadas!");
                 issues.addAll(clodesIssues);
             }
@@ -62,45 +66,50 @@ public class IssueServices implements Serializable {
         return issues;
     }
 
-    public static EntityIssue createEntity(Issue gitIssue, EntityRepository repository, GenericDao dao) {
-        if (gitIssue == null) {
-            return null;
+    public static EntityIssue createEntity(GHIssue gitIssue, EntityRepository repository, GenericDao dao) {
+        try {
+            if (gitIssue == null) {
+                return null;
+            }
+            
+            EntityIssue issue = getIssueByIdIssue(gitIssue.getId(), dao);
+            
+            if (issue == null) {
+                issue = new EntityIssue();
+            }
+            
+            issue.setMineredAt(new Date());
+            issue.setIdIssue(gitIssue.getId());
+            issue.setClosedAt(gitIssue.getClosedAt());
+            issue.setCreatedAt(gitIssue.getCreatedAt());
+            issue.setUpdatedAt(gitIssue.getUpdatedAt());
+            issue.setNumber(gitIssue.getNumber());
+            issue.setCommentsCount(gitIssue.getComments().size());
+            LabelServices.addLabels(issue, gitIssue.getLabels(), dao);
+            issue.setMilestone(MilestoneServices.createEntity(gitIssue.getMilestone(), repository, dao));
+            issue.setBody(JsfUtil.filterChar(gitIssue.getBody()));
+            issue.setBodyHtml(gitIssue.getBody());
+            issue.setBodyText(gitIssue.getBody());
+            issue.setHtmlUrl(gitIssue.getHtmlUrl().toString());
+            issue.setStateIssue(gitIssue.getState().toString());
+            issue.setTitle(JsfUtil.filterChar(gitIssue.getTitle()));
+            issue.setUrl(gitIssue.getUrl().toString());
+            issue.setAssignee(UserServices.createEntity(gitIssue.getAssignee(), dao, false));
+            issue.setUserIssue(UserServices.createEntity(gitIssue.getUser(), dao, false));
+            
+            
+            
+            if (issue.getId() == null || issue.getId().equals(new Long(0))) {
+                dao.insert(issue);
+            } else {
+                dao.edit(issue);
+            }
+            
+            return issue;
+        } catch (IOException ex) {
+            Logger.getLogger(IssueServices.class.getName()).log(Level.SEVERE, null, ex);
         }
-
-        EntityIssue issue = getIssueByIdIssue(gitIssue.getId(), dao);
-
-        if (issue == null) {
-            issue = new EntityIssue();
-        }
-
-        issue.setMineredAt(new Date());
-        issue.setIdIssue(gitIssue.getId());
-        issue.setClosedAt(gitIssue.getClosedAt());
-        issue.setCreatedAt(gitIssue.getCreatedAt());
-        issue.setUpdatedAt(gitIssue.getUpdatedAt());
-        issue.setNumber(gitIssue.getNumber());
-        issue.setCommentsCount(gitIssue.getComments());
-        LabelServices.addLabels(issue, gitIssue.getLabels(), dao);
-        issue.setMilestone(MilestoneServices.createEntity(gitIssue.getMilestone(), repository, dao));
-        issue.setBody(JsfUtil.filterChar(gitIssue.getBody()));
-        issue.setBodyHtml(gitIssue.getBodyHtml());
-        issue.setBodyText(gitIssue.getBodyText());
-        issue.setHtmlUrl(gitIssue.getHtmlUrl());
-        issue.setStateIssue(gitIssue.getState());
-        issue.setTitle(JsfUtil.filterChar(gitIssue.getTitle()));
-        issue.setUrl(gitIssue.getUrl());
-        issue.setAssignee(UserServices.createEntity(gitIssue.getAssignee(), dao, false));
-        issue.setUserIssue(UserServices.createEntity(gitIssue.getUser(), dao, false));
-
-
-
-        if (issue.getId() == null || issue.getId().equals(new Long(0))) {
-            dao.insert(issue);
-        } else {
-            dao.edit(issue);
-        }
-
-        return issue;
+        return null;
     }
 
     public static EntityIssue getIssueByNumber(int number, EntityRepository repo, GenericDao dao) {

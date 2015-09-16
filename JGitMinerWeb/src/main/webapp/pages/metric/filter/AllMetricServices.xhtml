@@ -1,0 +1,21 @@
+<div xmlns="http://www.w3.org/1999/xhtml"
+     xmlns:h="http://java.sun.com/jsf/html"
+     xmlns:p="http://primefaces.org/ui">
+
+    <h:panelGrid columns="2" cellpadding="5" columnClasses="col">
+        <h:outputLabel value="Size Top Rank: " for="sizeTopRank" />  
+        <h:panelGroup>
+            <p:inputText value="#{gitMetricBean.paramValue['sizeTopRank']}" id="sizeTopRank" type="number" />
+
+            <i>(Used for count Top rank dev and comments)</i>
+        </h:panelGroup>
+        
+        <h:outputLabel value="Pages: " for="pages" />  
+        <h:panelGroup>
+            <p:inputText value="#{gitMetricBean.paramValue['pages']}" id="pages" type="number" />
+
+            <i>(For pagination)</i>
+        </h:panelGroup>
+    </h:panelGrid>
+</div>
+

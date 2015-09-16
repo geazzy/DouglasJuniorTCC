@@ -9,16 +9,16 @@ import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityPullRequest;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepositoryCommit;
 import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
-import com.google.gson.reflect.TypeToken;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import org.eclipse.egit.github.core.Repository;
-import org.eclipse.egit.github.core.RepositoryCommit;
-import org.eclipse.egit.github.core.client.PageIterator;
-import org.eclipse.egit.github.core.client.PagedRequest;
-import org.eclipse.egit.github.core.service.CommitService;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.kohsuke.github.GHCommit;
+import org.kohsuke.github.GHPullRequestCommitDetail;
+import org.kohsuke.github.GHRepository;
 
 /**
  *
@@ -26,11 +26,13 @@ import org.eclipse.egit.github.core.service.CommitService;
  */
 public class RepositoryCommitServices implements Serializable {
 
-    public static List<RepositoryCommit> getGitCommitsFromRepository(Repository gitRepo, OutLog out) {
-        List<RepositoryCommit> repoCommits = null;
+    public static List<GHCommit> getGitCommitsFromRepository(GHRepository gitRepo, OutLog out) {
+        List<GHCommit> repoCommits = null;
         try {
             out.printLog("Baixando RepositoryCommits...\n");
-            repoCommits = new CommitService(AuthServices.getGitHubClient()).getCommits(gitRepo);
+
+            repoCommits = AuthServices.getGitHubClient().getRepository(gitRepo.getFullName()).listCommits().asList();
+//new CommitService(AuthServices.getGitHubClient()).getCommits(gitRepo);
             out.printLog(repoCommits.size() + " RepositoryCommits baixados no total!");
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -39,30 +41,38 @@ public class RepositoryCommitServices implements Serializable {
         return repoCommits;
     }
 
-    public static EntityRepositoryCommit createEntity(RepositoryCommit gitRepoCommit, GenericDao dao) {
+    public static EntityRepositoryCommit createEntity(GHCommit gitRepoCommit, GenericDao dao) {
         if (gitRepoCommit == null) {
             return null;
         }
 
-        EntityRepositoryCommit repoCommit = getRepoCommitBySHA(gitRepoCommit.getSha(), dao);
+        EntityRepositoryCommit repoCommit = getRepoCommitBySHA(gitRepoCommit.getSHA1(), dao);
 
         if (repoCommit == null) {
             repoCommit = new EntityRepositoryCommit();
             repoCommit.setMineredAt(new Date());
 
 //          createParents(repoCommit, gitRepoCommit.getParents(), gitRepo, dao);
-            repoCommit.setSha(gitRepoCommit.getSha());
-            repoCommit.setUrl(gitRepoCommit.getUrl());
+            repoCommit.setSha(gitRepoCommit.getSHA1());
+            repoCommit.setUrl(null);
             dao.insert(repoCommit);
         }
         if (repoCommit.getCommit() == null) {
-            repoCommit.setCommit(CommitServices.createEntity(gitRepoCommit.getCommit(), dao));
+            repoCommit.setCommit(CommitServices.createEntity(gitRepoCommit, dao));
         }
         if (repoCommit.getAuthor() == null) {
-            repoCommit.setAuthor(UserServices.createEntity(gitRepoCommit.getAuthor(), dao, false));
+            try {
+                repoCommit.setAuthor(UserServices.createEntity(gitRepoCommit.getAuthor(), dao, false));
+            } catch (IOException ex) {
+                Logger.getLogger(RepositoryCommitServices.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         if (repoCommit.getCommitter() == null) {
-            repoCommit.setCommitter(UserServices.createEntity(gitRepoCommit.getCommitter(), dao, false));
+            try {
+                repoCommit.setCommitter(UserServices.createEntity(gitRepoCommit.getCommitter(), dao, false));
+            } catch (IOException ex) {
+                Logger.getLogger(RepositoryCommitServices.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
         return repoCommit;
@@ -83,41 +93,66 @@ public class RepositoryCommitServices implements Serializable {
 //        }
 //    }
 
-    public static List<RepositoryCommit> getGitRepoCommitsFromPullRequest(EntityPullRequest pullRequest, EntityRepository repositoryToMiner) {
-        // https://api.github.com/repos/jashkenas/coffee-script/pulls/2682/commits
-        String id = getId(repositoryToMiner);
-        StringBuilder uri = new StringBuilder("/repos");
-        uri.append(id);
-        uri.append("/pulls");
-        uri.append("/").append(pullRequest.getNumber());
-        uri.append("/commits");
-        PagedRequest<RepositoryCommit> request = new PagedRequest<>(1, 100);
-        request.setUri(uri);
-        request.setType(new TypeToken<List<RepositoryCommit>>() {
-        }.getType());
-        PageIterator<RepositoryCommit> iterator = new PageIterator<>(request, AuthServices.getGitHubClient());
-        List<RepositoryCommit> elements = new ArrayList<>();
+    public static List<GHCommit> getGitRepoCommitsFromPullRequest(EntityPullRequest pullRequest,
+            EntityRepository repositoryToMiner) {
         try {
-            while (iterator.hasNext()) {
-                elements.addAll(iterator.next());
+            // https://api.github.com/repos/jashkenas/coffee-script/pulls/2682/commits
+
+//        String id = getId(repositoryToMiner);
+//        StringBuilder uri = new StringBuilder("/repos");
+//        uri.append(id);
+//        uri.append("/pulls");
+//        uri.append("/").append(pullRequest.getNumber());
+//        uri.append("/commits");
+//        PagedRequest<RepositoryCommit> request = new PagedRequest<>(1, 100);
+//        request.setUri(uri);
+//        request.setType(new TypeToken<List<RepositoryCommit>>() {
+//        }.getType());
+//        PageIterator<RepositoryCommit> iterator = new PageIterator<>(request, AuthServices.getGitHubClient());
+            List<GHCommit> gitCommitsList = new ArrayList<>();
+            List<GHPullRequestCommitDetail> gitPRCommitsList = new ArrayList<>();
+            
+            gitPRCommitsList = AuthServices.getGitHubClient().getRepository(repositoryToMiner.getOwner().getLogin() + "/"
+                    + repositoryToMiner.getName()).getPullRequest(pullRequest.getNumber()).
+                    listCommits().asList();
+
+            for (GHPullRequestCommitDetail gitPRCommit : gitPRCommitsList) {
+
+                gitCommitsList.add(AuthServices.getGitHubClient().
+                        getRepository(repositoryToMiner.getOwner().getLogin() + "/"
+                                + repositoryToMiner.getName()).getCommit(gitPRCommit.getSha()));
+
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return getGitRepoCommitsFromPullRequest(pullRequest, repositoryToMiner);
+
+//        for (GHPullRequestCommitDetail prCommit : ghPRCommit) {
+//            prCommit.getCommit()
+//        }
+//        try {
+//            while (iterator.hasNext()) {
+//                elements.addAll(iterator.next());
+//            }
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//            return getGitRepoCommitsFromPullRequest(pullRequest, repositoryToMiner);
+//        }
+            return gitCommitsList;
+        } catch (IOException ex) {
+            Logger.getLogger(RepositoryCommitServices.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return elements;
+        return null;
     }
 
     private static String getId(EntityRepository repository) {
         return "/" + repository.getOwner().getLogin() + "/" + repository.getName();
     }
 
-    public static RepositoryCommit getGitRepositoryCommit(Repository gitRepo, RepositoryCommit gitRepoCommit, OutLog out, int nRetries) throws Exception {
+    public static GHCommit getGitRepositoryCommit(GHRepository gitRepo, GHCommit gitRepoCommit, OutLog out, int nRetries) throws Exception {
         if (nRetries <= 0) {
             return null;
         }
         try {
-            return new CommitService(AuthServices.getGitHubClient()).getCommit(gitRepo, gitRepoCommit.getSha());
+
+            return AuthServices.getGitHubClient().getRepository(gitRepo.getFullName()).getCommit(gitRepoCommit.getSHA1());
         } catch (Exception ex) {
             ex.printStackTrace();
             out.printLog("Erro de conexão: " + ex);

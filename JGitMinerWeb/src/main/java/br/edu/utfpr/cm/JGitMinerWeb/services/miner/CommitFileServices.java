@@ -10,7 +10,7 @@ import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepositoryCommit;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
-import org.eclipse.egit.github.core.CommitFile;
+import org.kohsuke.github.GHCommit;
 
 /**
  *
@@ -18,7 +18,7 @@ import org.eclipse.egit.github.core.CommitFile;
  */
 public class CommitFileServices implements Serializable {
 
-    public static EntityCommitFile createEntity(CommitFile gitCommitFile, GenericDao dao, EntityRepositoryCommit repoCommit) {
+    public static EntityCommitFile createEntity(GHCommit.File gitCommitFile, GenericDao dao, EntityRepositoryCommit repoCommit) {
         if (gitCommitFile == null) {
             return null;
         }
@@ -28,13 +28,13 @@ public class CommitFileServices implements Serializable {
         if (commitFile == null) {
             commitFile = new EntityCommitFile();
             commitFile.setMineredAt(new Date());
-            commitFile.setAdditions(gitCommitFile.getAdditions());
-            commitFile.setBlobUrl(gitCommitFile.getBlobUrl());
-            commitFile.setChanges(gitCommitFile.getChanges());
-            commitFile.setDeletions(gitCommitFile.getDeletions());
-            commitFile.setFilename(gitCommitFile.getFilename());
+            commitFile.setAdditions(gitCommitFile.getLinesAdded());
+            commitFile.setBlobUrl(gitCommitFile.getBlobUrl().toString());
+            commitFile.setChanges(gitCommitFile.getLinesChanged());
+            commitFile.setDeletions(gitCommitFile.getLinesDeleted());
+            commitFile.setFilename(gitCommitFile.getFileName());
             commitFile.setPatch(gitCommitFile.getPatch());
-            commitFile.setRawUrl(gitCommitFile.getRawUrl());
+            commitFile.setRawUrl(gitCommitFile.getRawUrl().toString());
             commitFile.setSha(gitCommitFile.getSha());
             commitFile.setStatus(gitCommitFile.getStatus());
             dao.insert(commitFile);

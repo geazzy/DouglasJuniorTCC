@@ -7,12 +7,15 @@ package br.edu.utfpr.cm.JGitMinerWeb.services.miner;
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityComment;
 import br.edu.utfpr.cm.JGitMinerWeb.util.JsfUtil;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
-import org.eclipse.egit.github.core.Comment;
-import org.eclipse.egit.github.core.Repository;
-import org.eclipse.egit.github.core.service.IssueService;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.kohsuke.github.GHIssueComment;
+import org.kohsuke.github.GHRepository;
+
 
 /**
  *
@@ -28,7 +31,7 @@ public class CommentServices implements Serializable {
         return null;
     }
 
-    public static EntityComment createEntity(Comment gitComment, GenericDao dao) {
+    public static EntityComment createEntity(GHIssueComment gitComment, GenericDao dao) {
         if (gitComment == null) {
             return null;
         }
@@ -36,27 +39,31 @@ public class CommentServices implements Serializable {
         EntityComment comment = getCommentByIdComment(gitComment.getId(), dao);
 
         if (comment == null) {
-            comment = new EntityComment();
-
-            comment.setMineredAt(new Date());
-            comment.setCreatedAt(gitComment.getCreatedAt());
-            comment.setUpdatedAt(gitComment.getUpdatedAt());
-            comment.setBody(JsfUtil.filterChar(gitComment.getBody()));
-            comment.setBodyHtml(gitComment.getBodyHtml());
-            comment.setBodyText(gitComment.getBodyText());
-            comment.setIdComment(gitComment.getId());
-            comment.setUrl(gitComment.getUrl());
-            comment.setUser(UserServices.createEntity(gitComment.getUser(), dao, false));
-
-            dao.insert(comment);
+            try {
+                comment = new EntityComment();
+                
+                comment.setMineredAt(new Date());
+                comment.setCreatedAt(gitComment.getCreatedAt());
+                comment.setUpdatedAt(gitComment.getUpdatedAt());
+                comment.setBody(JsfUtil.filterChar(gitComment.getBody()));
+                comment.setBodyHtml(gitComment.getBody());
+                comment.setBodyText(gitComment.getBody());
+                comment.setIdComment(gitComment.getId());
+                comment.setUrl(gitComment.getUrl().toString());
+                comment.setUser(UserServices.createEntity(gitComment.getUser(), dao, false));
+                
+                dao.insert(comment);
+            } catch (IOException ex) {
+                Logger.getLogger(CommentServices.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
         return comment;
     }
 
-    public static List<Comment> getGitCommentsByIssue(Repository gitRepo, Integer issueNumber) throws Exception {
+    public static List<GHIssueComment> getGitCommentsByIssue(GHRepository gitRepo, Integer issueNumber) throws Exception {
         try {
-            return new IssueService(AuthServices.getGitHubClient()).getComments(gitRepo, issueNumber);
+            return AuthServices.getGitHubClient().getRepository(gitRepo.getFullName()).getIssue(issueNumber).getComments();
         } catch (Exception ex) {
             ex.printStackTrace();
             return getGitCommentsByIssue(gitRepo, issueNumber);

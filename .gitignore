@@ -4,3 +4,5 @@
 *.ear
 *.war
 *.jar
+
+JGitMinerWeb/src/main/resources/accounts

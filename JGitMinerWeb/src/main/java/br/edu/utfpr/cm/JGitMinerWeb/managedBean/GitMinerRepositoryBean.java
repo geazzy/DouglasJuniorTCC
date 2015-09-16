@@ -14,8 +14,7 @@ import java.util.List;
 import javax.ejb.EJB;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.RequestScoped;
-import org.eclipse.egit.github.core.Repository;
-import org.eclipse.egit.github.core.service.RepositoryService;
+import org.kohsuke.github.GHRepository;
 
 @ManagedBean(name = "gitMinerRepositoryBean")
 @RequestScoped
@@ -86,7 +85,7 @@ public class GitMinerRepositoryBean implements Serializable {
                 throw new RuntimeException("Informe o nome e login do repositorio desejado, ou a URL para a página do GitHub.");
             }
 
-            Repository gitRepository = new RepositoryService(AuthServices.getGitHubClient()).getRepository(this.repositoryOwnerLogin, this.repositoryName);
+            GHRepository gitRepository = AuthServices.getGitHubClient().getRepository(this.repositoryOwnerLogin +"/"+ this.repositoryName);
 
             System.err.println("Repositório: " + gitRepository.getName() + " | " + gitRepository.getOwner().getLogin() + " | " + gitRepository.getCreatedAt() + " | " + gitRepository.getHtmlUrl());
 

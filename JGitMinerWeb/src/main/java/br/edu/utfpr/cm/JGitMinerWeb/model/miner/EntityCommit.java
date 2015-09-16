@@ -21,7 +21,8 @@ import javax.persistence.*;
     @Index(columnList = "url", unique = true)
 })
 @NamedQueries({
-    @NamedQuery(name = "Commit.findByURL", query = "SELECT c FROM EntityCommit c WHERE c.url = :url")
+    @NamedQuery(name = "Commit.findByURL", query = "SELECT c FROM EntityCommit c WHERE c.url = :url"),
+    @NamedQuery(name = "Commit.findBySha", query = "SELECT c FROM EntityCommit c WHERE c.sha = :sha")
 })
 public class EntityCommit implements InterfaceEntity, Serializable {
 
