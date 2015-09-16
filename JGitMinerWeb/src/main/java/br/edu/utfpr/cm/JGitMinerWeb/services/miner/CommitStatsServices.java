@@ -10,7 +10,7 @@ import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepositoryCommit;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
-import org.eclipse.egit.github.core.CommitStats;
+import org.kohsuke.github.GHCommit;
 
 /**
  *
@@ -18,7 +18,7 @@ import org.eclipse.egit.github.core.CommitStats;
  */
 public class CommitStatsServices implements Serializable {
 
-    public static EntityCommitStats createEntity(CommitStats gitStats, EntityRepositoryCommit repoCommit, GenericDao dao) {
+    public static EntityCommitStats createEntity(GHCommit gitStats, EntityRepositoryCommit repoCommit, GenericDao dao) {
         if (gitStats == null) {
             return null;
         }
@@ -26,9 +26,9 @@ public class CommitStatsServices implements Serializable {
         EntityCommitStats stats = new EntityCommitStats();
 
         stats.setMineredAt(new Date());
-        stats.setAdditions(gitStats.getAdditions());
-        stats.setDeletions(gitStats.getDeletions());
-        stats.setTotal(gitStats.getTotal());
+        stats.setAdditions(gitStats.getLinesAdded());
+        stats.setDeletions(gitStats.getLinesDeleted());
+        stats.setTotal(stats.getAdditions()+stats.getDeletions());
 
         dao.insert(stats);
 

@@ -27,7 +27,8 @@ import javax.persistence.*;
 })
 @NamedQueries({
     @NamedQuery(name = "RepositoryCommit.findByURL", query = "SELECT c FROM EntityRepositoryCommit c WHERE c.url = :url"),
-    @NamedQuery(name = "RepositoryCommit.findBySHA", query = "SELECT c FROM EntityRepositoryCommit c WHERE c.sha = :sha")
+    @NamedQuery(name = "RepositoryCommit.findBySHA", query = "SELECT c FROM EntityRepositoryCommit c WHERE c.sha = :sha"),
+    @NamedQuery(name = "RepositoryCommit.findById", query = "SELECT c FROM EntityRepositoryCommit c WHERE c.id = :id")
 })
 public class EntityRepositoryCommit implements InterfaceEntity, Serializable {
 

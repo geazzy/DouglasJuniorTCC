@@ -42,7 +42,7 @@
             <br />
             <br />
 
-            <p:progressBar id="progress" widgetVar="progressVar" ajax="true" value="#{gitMatrixBean.progress}" labelTemplate="{value}%" styleClass="animated" interval="3000" >
+           <p:progressBar id="progress" widgetVar="progressVar" ajax="true" value="#{gitMatrixBean.progress}" labelTemplate="{value}%" styleClass="animated" interval="3000" >
                 <p:ajax event="complete" listener="#{gitMatrixBean.onComplete()}" update="messages,loadingImage,logTextArea" oncomplete="startButtonVar.enable();textAreaUpdaterVar.stop();"/>
             </p:progressBar>
 

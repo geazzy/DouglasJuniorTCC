@@ -9,6 +9,7 @@ import br.edu.utfpr.cm.JGitMinerWeb.model.matrix.EntityMatrix;
 import br.edu.utfpr.cm.JGitMinerWeb.model.matrix.EntityMatrixNode;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.services.metric.auxiliary.AuxFileFileMetrics;
+import br.edu.utfpr.cm.JGitMinerWeb.services.metric.auxiliary.AuxFileFileMetrics2;
 import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
 import edu.uci.ics.jung.graph.Graph;
 import static java.lang.Thread.sleep;
@@ -63,6 +64,9 @@ public class CochangeSupportConfidenceLiftConvictionInDateServices extends Abstr
         return getIntegerParam("maxFilesPerCommit");
     }
 
+    private int getMinCochange() {
+        return getIntegerParam("minCochange");
+    }
     @Override
     public void run() {
         try {
@@ -81,7 +85,7 @@ public class CochangeSupportConfidenceLiftConvictionInDateServices extends Abstr
 
             List selectParams = new ArrayList();
 
-            String select = "select distinct fil.filename, fil2.filename  "
+            String select = "select distinct fil.filename, fil2.filename, prc.repositorycommits_id, prc2.repositorycommits_id, pul.id "
                     + "from gitcommitfile fil, "
                     + "     gitpullrequest_gitrepositorycommit prc, "
                     + "     gitcommitfile fil2, "
@@ -109,56 +113,96 @@ public class CochangeSupportConfidenceLiftConvictionInDateServices extends Abstr
             selectParams.add(getRepository().getId());
             selectParams.add(beginDate);
             selectParams.add(endDate);
+            
+            System.out.println("paramsseletc: "+selectParams.toString());
 
             List<Object[]> cochangeResult = dao.selectNativeWithParams(select, selectParams.toArray());
 
             sleep(1l);
 
-            Set<AuxFileFileMetrics> pairFileMetrics = new HashSet<>();
+            System.out.println("result size: " + cochangeResult.size());
+
+            List<AuxFileFileMetrics2> pairFileMetrics = new ArrayList<>();
             for (Object[] record : cochangeResult) {
-                pairFileMetrics.add(new AuxFileFileMetrics(record[0] + "", record[1] + ""));
+
+                AuxFileFileMetrics2 pairFileFile = new AuxFileFileMetrics2(record[0] + "", record[1] + "", record[2] + "", record[3] + "", record[4] + "");
+
+                if (pairFileMetrics.contains(pairFileFile)) {
+                    int index = pairFileMetrics.indexOf(pairFileFile);
+
+                    AuxFileFileMetrics2 pairFileToUpdate = pairFileMetrics.get(index);
+//                    System.out.println("pair1: "+pairFileFile.toString());
+//                    System.out.println("pair2: "+pairFileToUpdate.toString());
+                    //remove para evitar os duplicados
+                    //  pairFileMetrics.remove(index);
+                    pairFileToUpdate.addRepoCommitIdAndPullRequestId(pairFileFile);
+                    //add novamente com a lista de repocommit_id atualizada
+//                     System.out.println("pair to update: "+pairFileToUpdate.toString());
+                    pairFileMetrics.add(index, pairFileToUpdate);
+                } else {
+                    pairFileMetrics.add(pairFileFile);
+                }
+
             }
             cochangeResult.clear();
 
-            out.printLog(pairFileMetrics.size() + " pares encontrados.");
+            Set<AuxFileFileMetrics2> pairFileSetCollectionMetrics = new HashSet<>();
+//            for (AuxFileFileMetrics2 pair : pairFileMetrics) {
+//                pairFileSetCollectionMetrics.add(pair);
+//            }
+            pairFileSetCollectionMetrics.addAll(pairFileMetrics);
+            // pairFileMetrics.clear();
+
+            out.printLog(pairFileSetCollectionMetrics.size() + " pares encontrados.");
 
             sleep(1l);
 
             out.printLog("Iniciando cálculo do support, confidence, lift e conviction.");
             int i = 1;
-            for (AuxFileFileMetrics pairFile : pairFileMetrics) {
-                if (i % 100 == 0 || i == pairFileMetrics.size()) {
-                    System.out.println(i + "/" + pairFileMetrics.size());
+             Set<AuxFileFileMetrics2> pairFileSetCollectionMetricsFinal = new HashSet<>();
+             
+            for (AuxFileFileMetrics2 pairFile : pairFileSetCollectionMetrics) {
+                if (i % 100 == 0 || i == pairFileSetCollectionMetrics.size()) {
+                    System.out.println(i + "/" + pairFileSetCollectionMetrics.size());
                 }
 
+                // System.out.println("ids: "+ pairFile.getRepositorycommits_idList().toString());
+//                List<Long> repoCommits_idList = getRepoCommitsID(pairFile.getFile(), pairFile.getFile2(), getBeginDate(), getEndDate());
+//                pairFile.addRepositoyCommits_ids(repoCommits_idList);
+//                repoCommits_idList.clear();
                 Long pairFileNumberOfPullrequestOfPair = calculeUpdates(pairFile.getFile(), pairFile.getFile2(), getBeginDate(), getEndDate());
-                Long pairFileNumberOfPullrequestOfPairFuture = calculeUpdates(pairFile.getFile(), pairFile.getFile2(), futureBeginDate, futureEndDate);
-                Long fileNumberOfPullrequestOfPairFuture = calculeUpdates(pairFile.getFile(), null, futureBeginDate, futureEndDate);
-                Long file2NumberOfPullrequestOfPairFuture = calculeUpdates(pairFile.getFile2(), null, futureBeginDate, futureEndDate);
-                Long numberOfAllPullrequestFuture = calculeUpdates(null, null, futureBeginDate, futureEndDate);
 
-                pairFile.addMetrics(pairFileNumberOfPullrequestOfPair, pairFileNumberOfPullrequestOfPairFuture, fileNumberOfPullrequestOfPairFuture, file2NumberOfPullrequestOfPairFuture, numberOfAllPullrequestFuture);
+                if (pairFileNumberOfPullrequestOfPair >= getMinCochange()) {
 
-                Double supportFile = numberOfAllPullrequestFuture == 0 ? 0d : fileNumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
-                Double supportFile2 = numberOfAllPullrequestFuture == 0 ? 0d : file2NumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
-                Double supportPairFile = numberOfAllPullrequestFuture == 0 ? 0d : pairFileNumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
-                Double confidence = supportFile == 0 ? 0d : supportPairFile / supportFile;
-                Double confidence2 = supportFile2 == 0 ? 0d : supportPairFile / supportFile2;
-                Double lift = supportFile * supportFile2 == 0 ? 0d : supportPairFile / (supportFile * supportFile2);
-                Double conviction = 1 - confidence == 0 ? 0d : (1 - supportFile2) / (1 - confidence);
-                Double conviction2 = 1 - confidence2 == 0 ? 0d : (1 - supportFile2) / (1 - confidence2);
+                    Long pairFileNumberOfPullrequestOfPairFuture = calculeUpdates(pairFile.getFile(), pairFile.getFile2(), futureBeginDate, futureEndDate);
+                    Long fileNumberOfPullrequestOfPairFuture = calculeUpdates(pairFile.getFile(), null, futureBeginDate, futureEndDate);
+                    Long file2NumberOfPullrequestOfPairFuture = calculeUpdates(pairFile.getFile2(), null, futureBeginDate, futureEndDate);
+                    Long numberOfAllPullrequestFuture = calculeUpdates(null, null, futureBeginDate, futureEndDate);
 
-                pairFile.addMetrics(supportFile, supportFile2, supportPairFile, confidence, confidence2, lift, conviction, conviction2);
+                    pairFile.addMetrics(pairFileNumberOfPullrequestOfPair, pairFileNumberOfPullrequestOfPairFuture, fileNumberOfPullrequestOfPairFuture, file2NumberOfPullrequestOfPairFuture, numberOfAllPullrequestFuture);
 
+                    Double supportFile = numberOfAllPullrequestFuture == 0 ? 0d : fileNumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
+                    Double supportFile2 = numberOfAllPullrequestFuture == 0 ? 0d : file2NumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
+                    Double supportPairFile = numberOfAllPullrequestFuture == 0 ? 0d : pairFileNumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
+                    Double confidence = supportFile == 0 ? 0d : supportPairFile / supportFile;
+                    Double confidence2 = supportFile2 == 0 ? 0d : supportPairFile / supportFile2;
+                    Double lift = supportFile * supportFile2 == 0 ? 0d : supportPairFile / (supportFile * supportFile2);
+                    Double conviction = 1 - confidence == 0 ? 0d : (1 - supportFile2) / (1 - confidence);
+                    Double conviction2 = 1 - confidence2 == 0 ? 0d : (1 - supportFile2) / (1 - confidence2);
+
+                    pairFile.addMetrics(supportFile, supportFile2, supportPairFile, confidence, confidence2, lift, conviction, conviction2);
+                    pairFileSetCollectionMetricsFinal.add(pairFile);
+                }
                 i++;
                 sleep(1l);
             }
 
+            
             EntityMatrix matrix = new EntityMatrix();
-            matrix.setNodes(objectsToNodes(pairFileMetrics));
+            
+            matrix.setNodes(objectsToNodes(pairFileSetCollectionMetricsFinal));
 
-            pairFileMetrics.clear();
-
+           // pairFileMetrics.clear();
             sleep(1l);
 
             saveMatrix(matrix);
@@ -241,6 +285,54 @@ public class CochangeSupportConfidenceLiftConvictionInDateServices extends Abstr
         Long count = dao.selectNativeOneWithParams(jpql, selectParams.toArray());
 
         return count != null ? count : 0l;
+    }
+
+    private List<Long> getRepoCommitsID(String file, String file2, Date beginDate, Date endDate) {
+
+        List selectParams = new ArrayList();
+
+        String jpql = " SELECT prc.repositorycommits_id "
+                + " FROM gitpullrequest pul, gitpullrequest_gitrepositorycommit prc "
+                + " where pul.repository_id = ? "
+                + "   and pul.createdat between ? and ? ";
+
+        if (isOnlyMergeds()) {
+            jpql += "  and pul.mergedat is not null ";
+        }
+
+        selectParams.add(getRepository().getId());
+        selectParams.add(beginDate);
+        selectParams.add(endDate);
+
+        jpql += "  and exists  "
+                + "  ( select f.* "
+                + "  from gitpullrequest_gitrepositorycommit r, "
+                + "       gitcommitfile f  "
+                + "  where r.entitypullrequest_id = pul.id "
+                + "    and f.repositorycommit_id = r.repositorycommits_id "
+                + "    and f.filename = ? ) ";
+        selectParams.add(file);
+
+        jpql += "  and exists  "
+                + "  ( select f2.*  "
+                + "  from gitpullrequest_gitrepositorycommit r2, "
+                + "       gitcommitfile f2  "
+                + "  where r2.entitypullrequest_id = pul.id "
+                + "    and f2.repositorycommit_id = r2.repositorycommits_id "
+                + "    and f2.filename = ? ) ";
+
+        jpql += "   and prc.entitypullrequest_id = pul.id ";
+
+        selectParams.add(file2);
+
+        System.out.println("jpql: " + jpql);
+
+        List<Long> result = dao.selectNativeWithParams(jpql, selectParams.toArray());
+
+        System.out.println("file1: " + file + " file2: " + file2);
+        System.out.println(result);
+
+        return result;
     }
 
 }

@@ -8,12 +8,15 @@ import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityMilestone;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import org.eclipse.egit.github.core.Milestone;
-import org.eclipse.egit.github.core.Repository;
-import org.eclipse.egit.github.core.service.MilestoneService;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.kohsuke.github.GHIssueState;
+import org.kohsuke.github.GHMilestone;
+import org.kohsuke.github.GHRepository;
 
 /**
  *
@@ -21,21 +24,30 @@ import org.eclipse.egit.github.core.service.MilestoneService;
  */
 public class MilestoneServices implements Serializable {
 
-    public static EntityMilestone createEntity(Milestone gitMilestone, EntityRepository repository, GenericDao dao) {
+    public static EntityMilestone createEntity(GHMilestone gitMilestone, EntityRepository repository, GenericDao dao) {
         if (gitMilestone == null) {
             return null;
         }
 
-        EntityMilestone milestone = getMilestoneByURL(gitMilestone.getUrl(), dao);
+        EntityMilestone milestone = getMilestoneByURL(gitMilestone.getUrl().toString(), dao);
 
         if (milestone == null) {
-            milestone = new EntityMilestone();
-            milestone.setCreator(UserServices.createEntity(gitMilestone.getCreator(), dao, false));
-            milestone.setUrl(gitMilestone.getUrl());
-            milestone.setNumber(gitMilestone.getNumber());
-            milestone.setCreatedAt(gitMilestone.getCreatedAt());
-            if (repository != null) {
-                milestone.setRepository(repository);
+            try {
+                milestone = new EntityMilestone();
+
+                System.out.println("milestone creator: "+gitMilestone.getCreator());
+                
+               // System.out.println("milestone creator CreateAt: "+gitMilestone.getCreator().get);
+                
+                milestone.setCreator(UserServices.createEntity(gitMilestone.getCreator(), dao, false));
+                milestone.setUrl(gitMilestone.getUrl().toString());
+                milestone.setNumber(gitMilestone.getNumber());
+                milestone.setCreatedAt(gitMilestone.getCreatedAt());
+                if (repository != null) {
+                    milestone.setRepository(repository);
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(MilestoneServices.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
@@ -43,7 +55,7 @@ public class MilestoneServices implements Serializable {
         milestone.setClosedIssues(gitMilestone.getClosedIssues());
         milestone.setOpenIssues(gitMilestone.getOpenIssues());
         milestone.setDescription(gitMilestone.getDescription());
-        milestone.setStateMilestone(gitMilestone.getState());
+        milestone.setStateMilestone(gitMilestone.getState().toString());
         milestone.setTitle(gitMilestone.getTitle());
 
         if (milestone.getId() == null || milestone.getId().equals(new Long(0))) {
@@ -63,21 +75,23 @@ public class MilestoneServices implements Serializable {
         return null;
     }
 
-    public static List<Milestone> getGitMilestoneFromRepository(Repository gitRepo, boolean open, boolean closed, OutLog out) {
-        List<Milestone> milestones = new ArrayList<Milestone>();
+    public static List<GHMilestone> getGitMilestoneFromRepository(GHRepository gitRepo, boolean open, boolean closed, OutLog out) {
+        List<GHMilestone> milestones = new ArrayList<GHMilestone>();
         try {
-            MilestoneService service = new MilestoneService(AuthServices.getGitHubClient());
+
             if (open) {
-                List<Milestone> opens;
+                List<GHMilestone> opens;
                 out.printLog("Baixando Milestones Abertos...\n");
-                opens = service.getMilestones(gitRepo, "open");
+                opens = AuthServices.getGitHubClient().getRepository(gitRepo.getFullName()).listMilestones(GHIssueState.OPEN).asList();
+
                 out.printLog(opens.size() + " Milestones abertos baixadas!");
                 milestones.addAll(opens);
             }
             if (closed) {
-                List<Milestone> closeds;
+                List<GHMilestone> closeds;
                 out.printLog("Baixando Milestones Fechados...\n");
-                closeds = service.getMilestones(gitRepo, "closed");
+                closeds = AuthServices.getGitHubClient().getRepository(gitRepo.getFullName()).listMilestones(GHIssueState.OPEN).asList();
+
                 out.printLog(closeds.size() + " Milestones fechados baixadas!");
                 milestones.addAll(closeds);
             }

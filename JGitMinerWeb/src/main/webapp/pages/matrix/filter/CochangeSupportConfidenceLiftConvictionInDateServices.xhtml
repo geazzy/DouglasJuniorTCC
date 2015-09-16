@@ -31,6 +31,10 @@
         <p:inputText value="#{gitMatrixBean.paramValue['maxFilesPerCommit']}" id="maxFilesPerCommit" type="number"  size="20" />
         <p:spacer />
         <br />
+        <h:outputText value="Min cochange: " />  
+        <p:inputText value="#{gitMatrixBean.paramValue['minCochange']}" id="minCochange" type="number"  size="20" />
+        <p:spacer />
+        <br />
     </h:panelGrid>
     <br />
     <p:accordionPanel activeIndex="999" style="width:80%">  

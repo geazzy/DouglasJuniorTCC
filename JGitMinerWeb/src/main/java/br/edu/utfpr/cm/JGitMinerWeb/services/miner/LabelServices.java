@@ -8,9 +8,10 @@ import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityIssue;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityLabel;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import org.eclipse.egit.github.core.Label;
+import org.kohsuke.github.GHLabel;
 
 /**
  *
@@ -18,8 +19,8 @@ import org.eclipse.egit.github.core.Label;
  */
 public class LabelServices implements Serializable {
 
-    public static void addLabels(EntityIssue issue, List<Label> gitLabels, GenericDao dao) {
-        for (Label gitLabel : gitLabels) {
+    public static void addLabels(EntityIssue issue, Collection<GHLabel> gitLabels, GenericDao dao) {
+        for (GHLabel gitLabel : gitLabels) {
             EntityLabel label = getLabelByName(gitLabel.getName(), dao);
             if (label == null) {
                 label = new EntityLabel();
