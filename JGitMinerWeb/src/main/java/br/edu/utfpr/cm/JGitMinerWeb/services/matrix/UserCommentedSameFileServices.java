@@ -50,11 +50,6 @@ public class UserCommentedSameFileServices extends AbstractMatrixServices {
         return filesName;
     }
 
-    private Integer getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
-    }
-
     private Boolean isIncludeGenericComments() {
         return Boolean.parseBoolean(params.get("includeGenericsComments") + "");
     }

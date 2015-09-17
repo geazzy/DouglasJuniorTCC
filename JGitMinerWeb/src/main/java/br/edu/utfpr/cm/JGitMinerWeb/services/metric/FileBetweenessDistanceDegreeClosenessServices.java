@@ -241,10 +241,10 @@ public class FileBetweenessDistanceDegreeClosenessServices extends AbstractMetri
         return Double.valueOf(result.get(0).getCount());
     }
 
-    private Integer getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
-    }
+//    private Integer getMilestoneNumber() {
+//        String mileNumber = params.get("milestoneNumber") + "";
+//        return Util.tratarStringParaInt(mileNumber);
+//    }
 
     private EntityRepository getRepository() {
         String[] repoStr = getMatrix().getRepository().split("/");

@@ -24,7 +24,8 @@ import javax.persistence.*;
     @Index(columnList = "createdAt")
 })
 @NamedQueries({
-    @NamedQuery(name = "Milestone.findByURL", query = "SELECT m FROM EntityMilestone m WHERE m.url = :url")
+    @NamedQuery(name = "Milestone.findByURL", query = "SELECT m FROM EntityMilestone m WHERE m.url = :url"),
+    @NamedQuery(name = "Milestone.findByID", query = "SELECT m FROM EntityMilestone m WHERE m.id = :id")
 })
 public class EntityMilestone implements InterfaceEntity, Serializable {
 

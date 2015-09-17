@@ -29,10 +29,6 @@ public class UserModifyFileInMilestoneServices extends AbstractMatrixServices {
         super(dao, repository, matricesToSave, params, out);
     }
 
-    private int getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
-    }
 
     private String getPrefixFile() {
         return params.get("prefixFile") + "%";

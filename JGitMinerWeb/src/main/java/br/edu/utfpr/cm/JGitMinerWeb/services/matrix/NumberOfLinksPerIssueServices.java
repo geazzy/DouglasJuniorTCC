@@ -52,14 +52,6 @@ public class NumberOfLinksPerIssueServices extends AbstractMatrixServices{
         return Util.tratarStringParaInt(mileNumber);
     }
 
-     private Date getBeginDate() {
-        return getDateParam("beginDate");
-    }
-
-    private Date getEndDate() {
-        return getDateParam("endDate");
-    }
-
     @Override
     public void run() {
         if (getRepository() == null) {

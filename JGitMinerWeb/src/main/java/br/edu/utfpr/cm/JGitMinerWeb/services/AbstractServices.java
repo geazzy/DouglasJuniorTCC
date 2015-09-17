@@ -36,6 +36,19 @@ public abstract class AbstractServices implements Runnable, Serializable {
         this.params = params;
     }
 
+    protected Date getBeginDate() {
+        return getDateParam("beginDate");
+    }
+
+    protected Date getEndDate() {
+        return getDateParam("endDate");
+    }
+    
+    protected Integer getMilestoneNumber() {
+        String mileNumber = params.get("milestoneNumber") + "";
+        return Util.tratarStringParaInt(mileNumber);
+    }
+
     public List<EntityNode> getNodes() {
         return nodes;
     }

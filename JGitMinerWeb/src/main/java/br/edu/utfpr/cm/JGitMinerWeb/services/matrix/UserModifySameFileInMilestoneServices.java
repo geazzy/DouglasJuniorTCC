@@ -50,11 +50,6 @@ public class UserModifySameFileInMilestoneServices extends AbstractMatrixService
         return filesName;
     }
 
-    private Integer getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
-    }
-
     public Date getBeginDate() {
         return getDateParam("beginDate");
     }

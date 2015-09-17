@@ -30,14 +30,6 @@ public class CochangeSupportConfidenceLiftConvictionInDateServices extends Abstr
         super(dao, repo, matrices, params, out);
     }
 
-    private Date getBeginDate() {
-        return getDateParam("beginDate");
-    }
-
-    private Date getEndDate() {
-        return getDateParam("endDate");
-    }
-
     public Date getFutureBeginDate() {
         return getDateParam("futureBeginDate");
     }

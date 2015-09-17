@@ -45,14 +45,16 @@ public class PairFileSupportConfidenceLiftConvictionInDateServices extends Abstr
         return getIntegerParam("intervalOfMonths");
     }
 
-    private Date getBeginDate() {
+     @Override
+    protected Date getBeginDate() {
         if (getMatrix().getClassServicesName().equals(UserCommentedSamePairOfFileInAllDateServices.class.getName())) {
             return getDateParam("matrixBeginDate");
         }
         return getDateParam("beginDate");
     }
 
-    private Date getEndDate() {
+     @Override
+    protected Date getEndDate() {
         if (getMatrix().getClassServicesName().equals(UserCommentedSamePairOfFileInAllDateServices.class.getName())) {
             return getDateParam("matrixEndDate");
         }

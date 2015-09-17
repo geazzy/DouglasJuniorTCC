@@ -36,17 +36,22 @@ public class EntityCommitFile implements InterfaceEntity, Serializable {
     private Integer additions;
     private Integer changes;
     private Integer deletions;
+    
     @Column(columnDefinition = "text")
     private String blobUrl;
     @Column(columnDefinition = "text", name = "filename")
     private String filename;
-    @Column(columnDefinition = "text")
+    
+    @Column(columnDefinition = "longtext")
     private String patch;
+    
     @Column(columnDefinition = "text")
     private String rawUrl;
     @Column(columnDefinition = "text", name = "sha")
     private String sha;
+    
     private String status;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "repositoryCommit_id")
     private EntityRepositoryCommit repositoryCommit;

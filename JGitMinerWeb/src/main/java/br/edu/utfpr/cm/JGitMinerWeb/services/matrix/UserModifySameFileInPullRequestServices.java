@@ -48,10 +48,6 @@ public class UserModifySameFileInPullRequestServices extends AbstractMatrixServi
         return "%" + params.get("suffixFile");
     }
 
-    private int getMilestoneNumber() {
-        String mileNumber = params.get("milestoneNumber") + "";
-        return Util.tratarStringParaInt(mileNumber);
-    }
 
     @Override
     public void run() {

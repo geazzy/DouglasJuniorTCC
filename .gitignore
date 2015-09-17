@@ -2,7 +2,12 @@
 
 # Package Files #
 *.ear
+<<<<<<< HEAD
 *.war
 *.jar
 
 JGitMinerWeb/src/main/resources/accounts
+=======
+Pacotes
+/trunk/JGitMinerWeb/src/java/br/edu/utfpr/cm/JGitMinerWeb/accounts
+>>>>>>> 7a87e95ca21fe3c59d5777ff430518e3e9105d8e

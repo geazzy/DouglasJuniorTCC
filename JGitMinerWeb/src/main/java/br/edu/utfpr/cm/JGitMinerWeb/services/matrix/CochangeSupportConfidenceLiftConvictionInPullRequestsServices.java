@@ -28,11 +28,13 @@ public class CochangeSupportConfidenceLiftConvictionInPullRequestsServices exten
         super(dao, repo, matrices, params, out);
     }
 
-    private Long getBeginDate() {
+    
+    protected Long beginPullRequest() {
         return getLongParam("beginPullRequest");
     }
 
-    private Long getEndDate() {
+    
+    protected Long endPullRequest() {
         return getLongParam("endPullRequest");
     }
 
@@ -74,8 +76,8 @@ public class CochangeSupportConfidenceLiftConvictionInPullRequestsServices exten
 
             Long futureBeginPull = getFutureBeginDate();
             Long futureEndPull = getFutureEndDate();
-            Long beginPull = getBeginDate();
-            Long endPull = getEndDate();
+            Long beginPull = beginPullRequest();
+            Long endPull = endPullRequest();
             List<String> filesToIgnore = getFilesToIgnore();
             List<String> filesToConsiders = getFilesToConsiders();
 

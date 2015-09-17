@@ -56,18 +56,12 @@ public class PairFileBetweenessDistanceDegreeClosenessInDateServices extends Abs
         return getIntegerParam("intervalOfMonths");
     }
 
-    private Date getBeginDate() {
+    @Override
+    protected Date getBeginDate() {
         if (getMatrix().getClassServicesName().equals(UserCommentedSamePairOfFileInAllDateServices.class.getName())) {
             return getDateParam("matrixBeginDate");
         }
         return getDateParam("beginDate");
-    }
-
-    private Date getEndDate() {
-        if (getMatrix().getClassServicesName().equals(UserCommentedSamePairOfFileInAllDateServices.class.getName())) {
-            return getDateParam("matrixEndDate");
-        }
-        return getDateParam("endDate");
     }
 
     public Date getFutureBeginDate() {

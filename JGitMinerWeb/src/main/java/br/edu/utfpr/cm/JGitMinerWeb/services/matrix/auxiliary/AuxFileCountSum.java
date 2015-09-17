@@ -48,6 +48,6 @@ public class AuxFileCountSum {
 
     @Override
     public String toString() {
-        return fileName + ";" + count;
+        return fileName + ";" + count; // obrigatorio
     }
 }
