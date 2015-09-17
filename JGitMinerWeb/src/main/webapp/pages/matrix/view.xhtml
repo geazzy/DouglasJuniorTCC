@@ -10,16 +10,25 @@
     <p:fieldset legend="Matrices generated">
         <h:form prependId="false" >
             <p:growl globalOnly="true" id="messages" />
+            <p:commandButton onclick="PrimeFaces.monitorDownload(start, stop)" ajax="false" value="Download all CSV">
+                <p:fileDownload value="#{gitMatrixViewBean.downloadAllCSV()}" />
+            </p:commandButton>
+            <p:commandButton  icon="ui-icon-trash" value="Delete All"
+                              id="deleteAllMatrices" oncomplete="confirmationDeleteAll.show()" />
             <p:dataTable var="matrix" value="#{gitMatrixViewBean.matrices}" id="list" rows="10" lazy="false"
                          emptyMessage="No matrices generated found." paginator="true" paginatorPosition="bottom"
                          paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
-                         rowsPerPageTemplate="5,10,15">
+                         rowsPerPageTemplate="10,25,50,100" >
                 <p:column headerText="ID">
                     <h:outputText value="#{matrix.id}" />
                 </p:column>
 
                 <p:column headerText="Repository">
                     <h:outputText value="#{matrix.repository}" />
+                </p:column>
+
+                <p:column headerText="Matrix">
+                    <h:outputText value="#{matrix.toString()}" />
                 </p:column>
 
                 <p:column headerText="Class Service">
@@ -43,16 +52,10 @@
                 </p:column>
 
                 <p:column headerText="Download Files">
-                    <p:commandButton onclick="PrimeFaces.monitorDownload(start, stop)" ajax="false" value="Log">
-                        <p:fileDownload value="#{gitMatrixViewBean.downloadLOG(matrix)}" />  
-                    </p:commandButton> 
-                    <p:commandButton onclick="PrimeFaces.monitorDownload(start, stop)" ajax="false" value="CSV">
-                        <p:fileDownload value="#{gitMatrixViewBean.downloadCSV(matrix)}" />  
-                    </p:commandButton> 
-                    <p:commandButton onclick="PrimeFaces.monitorDownload(start, stop)"  ajax="false" value="Params">
-                        <p:fileDownload value="#{gitMatrixViewBean.downloadParams(matrix)}" />  
-                    </p:commandButton> 
-
+                    <p:commandButton action="#{gitMatrixViewBean.downloadLOG(matrix)}" ajax="false" value="Log"/>
+                    <p:commandButton action="#{gitMatrixViewBean.downloadCSV(matrix)}" ajax="false" value="CSV" title="#{matrix.toString()}"/>
+                    <p:commandButton action="#{gitMatrixViewBean.downloadAllCSVOfOneVersion(matrix.toString())}" ajax="false" value="All CSV" title="#{matrix}"/>
+                    <p:commandButton action="#{gitMatrixViewBean.downloadParams(matrix)}"  ajax="false" value="Params"/>
                 </p:column>
 
                 <p:column headerText="Options">
@@ -62,7 +65,7 @@
             </p:dataTable>
 
             <p:confirmDialog  id="confirmDelete" widgetVar="confirmation"
-                              message="Really delete this matrix?" header="Confirmation" 
+                              message="Really delete this matrix?" header="Confirmation"
                               severity="alert"  closable="false" >
                 <p:commandButton value="Yes" id="confirmYes" update="list messages" oncomplete="confirmation.hide()" style="position: relative;left: 80px"
                                  actionListener="#{gitMatrixViewBean.deleteMatrixInSession()}">
@@ -70,20 +73,14 @@
                 <p:commandButton value="No" id="confirmNo" oncomplete="confirmation.hide()" style="position: relative;left: 80px"
                                  actionListener="#{gitMatrixViewBean.removeMatrixFromSession()}"/>
             </p:confirmDialog>
-        </h:form>
-        <!-- O código abaixo é responsavel por abrir a janela de Aguarde ao realizar o Download -->                              
-        <p:dialog modal="true" widgetVar="statusDialog" header="Loading..." draggable="false" closable="false" resizable="false">
-            <p:graphicImage value="resources/images/ajaxloadingbar.gif" />                                                       
-        </p:dialog>                                                                                                              
-        <script type="text/javascript">                                                                                          
-            function start() {                                                                                                   
-                statusDialog.show();                                                                                             
-            }                                                                                                                    
-                                                                                                                                
-            function stop() {                                                                                                    
-                statusDialog.hide();                                                                                             
-            }                                                                                                                    
-        </script>                                                                                                                
 
+            <p:confirmDialog  id="confirmDeleteAll" widgetVar="confirmationDeleteAll"
+                              message="Really delete all matrices?" header="Confirmation"
+                              severity="alert"  closable="false" >
+                <p:commandButton value="Yes" update="list messages" oncomplete="confirmationDeleteAll.hide()" style="position: relative;left: 80px"
+                                 actionListener="#{gitMatrixViewBean.deleteAll()}"/>
+                <p:commandButton value="No" oncomplete="confirmationDeleteAll.hide()" style="position: relative;left: 80px" />
+            </p:confirmDialog>
+        </h:form>
     </p:fieldset>
 </div>

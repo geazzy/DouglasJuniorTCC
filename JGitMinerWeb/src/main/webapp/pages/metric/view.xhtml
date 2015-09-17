@@ -10,10 +10,22 @@
 
         <h:form prependId="false" >
             <p:growl globalOnly="true" id="messages" />
+            <p:commandButton onclick="PrimeFaces.monitorDownload(start, stop)" ajax="false" value="Download all CSV">
+                <p:fileDownload value="#{gitMetricViewBean.downloadAllCSV()}" />
+            </p:commandButton>
+            <p:commandButton onclick="PrimeFaces.monitorDownload(start, stop)" ajax="false" value="Download all CSV Not Empty In Folder">
+                <p:fileDownload value="#{gitMetricViewBean.downloadAllCSVNotEmptyInFolder()}" />
+            </p:commandButton>
+            <p:commandButton onclick="PrimeFaces.monitorDownload(start, stop)" ajax="false" value="Download all CSV Not Empty In Folder Custom">
+                <p:fileDownload value="#{gitMetricViewBean.downloadAllCSVNotEmptyInFolderCustom()}" />
+            </p:commandButton>
+            <p:commandButton  icon="ui-icon-trash" value="Delete All"
+                              actionListener="#{gitMetricViewBean.addForDeleteInSession(metric)}"
+                              oncomplete="confirmationDeleteAll.show()" />
             <p:dataTable var="metric" value="#{gitMetricViewBean.metrics}" id="list" rows="10" lazy="false"
                          emptyMessage="No calculated metrics found." paginator="true" paginatorPosition="bottom"
                          paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
-                         rowsPerPageTemplate="5,10,15" style="width: 100%">
+                         rowsPerPageTemplate="10,25,50,100" style="width: 100%">
 
                 <p:column headerText="ID">
                     <h:outputText value="#{metric.id}" />
@@ -44,15 +56,10 @@
                 </p:column>
 
                 <p:column headerText="Download Files">
-                    <p:commandButton onclick="PrimeFaces.monitorDownload(start, stop)" ajax="false" value="Log">
-                        <p:fileDownload value="#{gitMetricViewBean.downloadLOG(metric)}" />  
-                    </p:commandButton> 
-                    <p:commandButton onclick="PrimeFaces.monitorDownload(start, stop)" ajax="false" value="CSV">
-                        <p:fileDownload value="#{gitMetricViewBean.downloadCSV(metric)}" />  
-                    </p:commandButton> 
-                    <p:commandButton onclick="PrimeFaces.monitorDownload(start, stop)"  ajax="false" value="Params">
-                        <p:fileDownload value="#{gitMetricViewBean.downloadParams(metric)}" />  
-                    </p:commandButton> 
+                    <p:commandButton action="#{gitMetricViewBean.downloadLOG(metric)}" ajax="false" value="Log"/>
+                    <p:commandButton action="#{gitMetricViewBean.downloadCSV(metric)}" ajax="false" value="CSV" title="#{metric}"/>
+                    <p:commandButton action="#{gitMetricViewBean.downloadAllCSVOfOneVersion(metric.matrix.toString())}" ajax="false" value="All CSV" title="#{metric}"/>
+                    <p:commandButton action="#{gitMetricViewBean.downloadParams(metric)}"  ajax="false" value="Params" title="#{metric.params}"/>
                 </p:column>
 
                 <p:column headerText="Options">
@@ -62,7 +69,7 @@
             </p:dataTable>
 
             <p:confirmDialog  id="confirmDelete" widgetVar="confirmation"
-                              message="Really delete this matrix?" header="Confirmation" 
+                              message="Really delete this metric?" header="Confirmation"
                               severity="alert"  closable="false" >
                 <p:commandButton value="Yes" id="confirmYes" update="list messages" oncomplete="confirmation.hide()" style="position: relative;left: 80px"
                                  actionListener="#{gitMetricViewBean.delete()}">
@@ -70,19 +77,14 @@
                 <p:commandButton value="No" id="confirmNo" oncomplete="confirmation.hide()" style="position: relative;left: 80px"
                                  actionListener="#{gitMetricViewBean.removeFromSession()}"/>
             </p:confirmDialog>
+
+            <p:confirmDialog  id="confirmDeleteAll" widgetVar="confirmationDeleteAll"
+                              message="Really delete all metrics?" header="Confirmation"
+                              severity="alert"  closable="false" >
+                <p:commandButton value="Yes" update="list messages" oncomplete="confirmationDeleteAll.hide()" style="position: relative;left: 80px"
+                                 actionListener="#{gitMetricViewBean.deleteAll()}" />
+                <p:commandButton value="No" oncomplete="confirmationDeleteAll.hide()" style="position: relative;left: 80px"/>
+            </p:confirmDialog>
         </h:form>
-        <!-- O código abaixo é responsavel por abrir a janela de Aguarde ao realizar o Download -->                              
-        <p:dialog modal="true" widgetVar="statusDialog" header="Loading..." draggable="false" closable="false" resizable="false">
-            <p:graphicImage value="resources/images/ajaxloadingbar.gif" />                                                       
-        </p:dialog>                                                                                                              
-        <script type="text/javascript">                                                                                          
-            function start() {                                                                                                   
-                statusDialog.show();                                                                                             
-            }                                                                                                                    
-                                                                                                                                
-            function stop() {                                                                                                    
-                statusDialog.hide();                                                                                             
-            }                                                                                                                    
-        </script>                                                                                                                
     </p:fieldset>
 </div>

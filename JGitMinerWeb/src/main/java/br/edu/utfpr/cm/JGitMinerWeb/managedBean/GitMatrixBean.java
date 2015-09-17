@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.edu.utfpr.cm.JGitMinerWeb.managedBean;
 
 import br.edu.utfpr.cm.JGitMinerWeb.converter.ClassConverter;
@@ -17,32 +13,27 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.ejb.EJB;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.SessionScoped;
+import javax.enterprise.context.SessionScoped;
+import javax.inject.Named;
 
 /**
  *
  * @author douglas
  */
-@ManagedBean(name = "gitMatrixBean")
+@Named
 @SessionScoped
 public class GitMatrixBean implements Serializable {
 
-
-    /*
-     * 
-     */
     @EJB
     private GenericDao dao;
     private OutLog out;
     private EntityRepository repository;
     private String repositoryId;
-    private Class serviceClass;
-    private Map params;
+    private Class<?> serviceClass;
+    private Map<Object, Object> params;
     private String message;
     private Thread process;
     private Integer progress;
@@ -55,7 +46,7 @@ public class GitMatrixBean implements Serializable {
      */
     public GitMatrixBean() {
         out = new OutLog();
-        params = new HashMap();
+        params = new HashMap<>();
     }
 
     public boolean isFail() {
@@ -82,15 +73,15 @@ public class GitMatrixBean implements Serializable {
         this.repositoryId = repositoryId;
     }
 
-    public Class getServiceClass() {
+    public Class<?> getServiceClass() {
         return serviceClass;
     }
 
-    public void setServiceClass(Class serviceClass) {
+    public void setServiceClass(Class<?> serviceClass) {
         this.serviceClass = serviceClass;
     }
 
-    public Map getParamValue() {
+    public Map<Object, Object> getParamValue() {
         return params;
     }
 
@@ -116,11 +107,11 @@ public class GitMatrixBean implements Serializable {
 
     public Integer getProgress() {
         if (fail) {
-            progress = new Integer(100);
+            progress = 100;
         } else if (progress == null) {
-            progress = new Integer(0);
+            progress = 0;
         } else if (progress > 100) {
-            progress = new Integer(100);
+            progress = 100;
         }
         System.out.println("progress: " + progress);
         return progress;
@@ -135,7 +126,7 @@ public class GitMatrixBean implements Serializable {
         initialized = false;
         canceled = false;
         fail = false;
-        progress = new Integer(0);
+        progress = 0;
 
         repository = dao.findByID(repositoryId, EntityRepository.class);
 
@@ -149,12 +140,12 @@ public class GitMatrixBean implements Serializable {
         if (repository == null || serviceClass == null) {
             message = "Erro: Escolha o repositorio e o service desejado.";
             out.printLog(message);
-            progress = new Integer(0);
+            progress = 0;
             initialized = false;
             fail = true;
         } else {
             initialized = true;
-            progress = new Integer(10);
+            progress = 10;
 
             final List<EntityMatrix> matricesToSave = new ArrayList<>();
 
@@ -171,7 +162,7 @@ public class GitMatrixBean implements Serializable {
 
                             super.run();
                         }
-                        progress = new Integer(50);
+                        progress = 50;
                         out.printLog("");
                         if (!canceled) {
                             out.setCurrentProcess("Iniciando salvamento dos dados gerados.");
@@ -207,7 +198,7 @@ public class GitMatrixBean implements Serializable {
                         } else {
                             out.setCurrentProcess(message);
                         }
-                        progress = new Integer(100);
+                        progress = 100;
                         initialized = false;
                         params.clear();
                         System.gc();
@@ -238,7 +229,7 @@ public class GitMatrixBean implements Serializable {
     public void onComplete() {
         out.printLog("onComplete" + '\n');
         initialized = false;
-        progress = new Integer(0);
+        progress = 0;
         if (fail) {
             JsfUtil.addErrorMessage(message);
         } else {
@@ -246,8 +237,8 @@ public class GitMatrixBean implements Serializable {
         }
     }
 
-    public List<Class> getServicesClasses() {
-        List<Class> cls = null;
+    public List<Class<?>> getServicesClasses() {
+        List<Class<?>> cls = null;
         try {
             cls = JsfUtil.getClasses(AbstractMatrixServices.class.getPackage().getName(), Arrays.asList(AbstractMatrixServices.class.getSimpleName()));
         } catch (Exception ex) {

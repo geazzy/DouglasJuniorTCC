@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 import org.apache.commons.collections15.Transformer;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -191,8 +192,16 @@ public class Util {
         }
     }
 
+    public static Double stringToDouble(String value) {
+        if (StringUtils.isBlank(value)) {
+            return null;
+        } else {
+            return Double.valueOf(value);
+        }
+    }
+
     public static String tratarDoubleParaString(double valor) {
-        return (valor + "").replace(".", ",");
+        return String.valueOf(valor).replace(",", ".");
     }
 
     /**

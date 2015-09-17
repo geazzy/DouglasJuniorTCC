@@ -12,7 +12,7 @@ import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityUser;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
-import org.kohsuke.github.GHCommitPointer;
+import org.eclipse.egit.github.core.PullRequestMarker;
 
 /**
  *
@@ -20,12 +20,12 @@ import org.kohsuke.github.GHCommitPointer;
  */
 public class PullRequestMakerServices implements Serializable {
 
-    static EntityPullRequestMarker createEntity(GHCommitPointer gitPullReqMaker, GenericDao dao) {
+    static EntityPullRequestMarker createEntity(PullRequestMarker gitPullReqMaker, GenericDao dao) {
         if (gitPullReqMaker == null) {
             return null;
         }
 
-        EntityRepository repository = RepositoryServices.createEntity(gitPullReqMaker.getRepository(), dao, false);
+        EntityRepository repository = RepositoryServices.createEntity(gitPullReqMaker.getRepo(), dao, false);
         EntityUser user = UserServices.createEntity(gitPullReqMaker.getUser(), dao, false);
 
         EntityPullRequestMarker pullReMaker = getByRefRepoUser(gitPullReqMaker.getRef(), repository, user, dao);

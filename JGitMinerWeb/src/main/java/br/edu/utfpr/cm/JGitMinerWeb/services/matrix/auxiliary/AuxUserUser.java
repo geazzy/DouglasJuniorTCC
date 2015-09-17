@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.edu.utfpr.cm.JGitMinerWeb.services.matrix.auxiliary;
 
 import br.edu.utfpr.cm.JGitMinerWeb.util.Util;
@@ -13,10 +9,10 @@ import java.util.Objects;
  */
 public class AuxUserUser {
 
-    private String user;
-    private String user2;
-    private String userAndUser2;
-    private String user2AndUser;
+    private final String user;
+    private final String user2;
+    private final String userAndUser2;
+    private final String user2AndUser;
 
     public AuxUserUser(String user, String user2) {
         this.user = user;
@@ -25,7 +21,7 @@ public class AuxUserUser {
         this.user2AndUser = user2 + ";" + user;
     }
 
-    public AuxUserUser(String userLogin, String userMail, String userLogin2, String userMail2, String fileName) {
+    public AuxUserUser(String userLogin, String userMail, String userLogin2, String userMail2) {
         this(userLogin == null || userLogin.isEmpty() ? userMail : userLogin,
                 userLogin2 == null || userLogin2.isEmpty() ? userMail2 : userLogin2);
     }
@@ -34,16 +30,16 @@ public class AuxUserUser {
         return user;
     }
 
-    public void setUser(String user) {
-        this.user = user;
-    }
-
     public String getUser2() {
         return user2;
     }
-
-    public void setUser2(String user2) {
-        this.user2 = user2;
+    
+    public String toStringUserAndUser2() {
+        return userAndUser2;
+    }
+    
+    public String toStringUser2AndUser() {
+        return user2AndUser;
     }
 
     @Override
@@ -60,14 +56,6 @@ public class AuxUserUser {
             }
         }
         return false;
-    }
-    
-    public String toStringUserAndUser2() {
-        return user + ";" + user2;
-    }
-    
-    public String toStringUser2AndUser() {
-        return user2 + ";" + user;
     }
 
     @Override

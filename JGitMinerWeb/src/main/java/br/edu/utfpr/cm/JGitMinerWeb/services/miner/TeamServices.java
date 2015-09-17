@@ -7,26 +7,24 @@ package br.edu.utfpr.cm.JGitMinerWeb.services.miner;
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityTeam;
 import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GHTeam;
+import org.eclipse.egit.github.core.Repository;
+import org.eclipse.egit.github.core.Team;
+import org.eclipse.egit.github.core.service.TeamService;
+
 /**
  *
  * @author douglas
  */
 public class TeamServices implements Serializable {
 
-    public static List<GHTeam> getGitTeamsFromRepository(GHRepository gitRepo, OutLog out) {
-        List<GHTeam> teams = new ArrayList<>();
+    public static List<Team> getGitTeamsFromRepository(Repository gitRepo, OutLog out) {
+        List<Team> teams = new ArrayList<Team>();
         try {
             out.printLog("Baixando Teams...\n");
-            
-            teams.addAll(AuthServices.getGitHubClient().getRepository(gitRepo.getFullName()).getTeams());
+            teams.addAll(new TeamService(AuthServices.getGitHubClient()).getTeams(gitRepo));
             out.printLog(teams.size() + " Teams baixados no total!");
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -35,36 +33,31 @@ public class TeamServices implements Serializable {
         return teams;
     }
 
-    public static EntityTeam createEntity(GHTeam gitTeam, GenericDao dao) {
-        try {
-            if (gitTeam == null) {
-                return null;
-            }
-            
-            EntityTeam team = getTeamByTeamID(gitTeam.getId(), dao);
-            
-            if (team == null) {
-                team = new EntityTeam();
-            }
-            
-            team.setIdTeam(gitTeam.getId());
-            team.setMembersCount(gitTeam.getMembers().size());
-            team.setName(gitTeam.getName());
-            team.setPermission(gitTeam.getPermission());
-            team.setReposCount(gitTeam.getRepositories().size());
-            team.setUrl(null);
-            
-            if (team.getId() == null || team.getId().equals(new Long(0))) {
-                dao.insert(team);
-            } else {
-                dao.edit(team);
-            }
-            
-            return team;
-        } catch (IOException ex) {
-            Logger.getLogger(TeamServices.class.getName()).log(Level.SEVERE, null, ex);
+    public static EntityTeam createEntity(Team gitTeam, GenericDao dao) {
+        if (gitTeam == null) {
+            return null;
         }
-        return null;
+
+        EntityTeam team = getTeamByTeamID(gitTeam.getId(), dao);
+
+        if (team == null) {
+            team = new EntityTeam();
+        }
+
+        team.setIdTeam(gitTeam.getId());
+        team.setMembersCount(gitTeam.getMembersCount());
+        team.setName(gitTeam.getName());
+        team.setPermission(gitTeam.getPermission());
+        team.setReposCount(gitTeam.getReposCount());
+        team.setUrl(gitTeam.getUrl());
+
+        if (team.getId() == null || team.getId().equals(0l)) {
+            dao.insert(team);
+        } else {
+            dao.edit(team);
+        }
+
+        return team;
     }
 
     private static EntityTeam getTeamByTeamID(int idTeam, GenericDao dao) {

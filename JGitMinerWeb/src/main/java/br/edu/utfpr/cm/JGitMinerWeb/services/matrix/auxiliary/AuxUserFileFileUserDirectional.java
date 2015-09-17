@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.edu.utfpr.cm.JGitMinerWeb.services.matrix.auxiliary;
 
 import br.edu.utfpr.cm.JGitMinerWeb.util.Util;
@@ -13,10 +9,10 @@ import java.util.Objects;
  */
 public class AuxUserFileFileUserDirectional {
 
-    private String user;
-    private String user2;
-    private String fileName;
-    private String fileName2;
+    private final String user;
+    private final String user2;
+    private final String fileName;
+    private final String fileName2;
     private int weight;
 
     public AuxUserFileFileUserDirectional(String user, String fileName, String fileName2, String user2, int weight) {
@@ -39,32 +35,16 @@ public class AuxUserFileFileUserDirectional {
         return user;
     }
 
-    public void setUser(String user) {
-        this.user = user;
-    }
-
     public String getUser2() {
         return user2;
-    }
-
-    public void setUser2(String user2) {
-        this.user2 = user2;
     }
 
     public String getFileName() {
         return fileName;
     }
 
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
-
     public String getFileName2() {
         return fileName2;
-    }
-
-    public void setFileName2(String fileName2) {
-        this.fileName2 = fileName2;
     }
 
     public int inc() {
@@ -91,6 +71,7 @@ public class AuxUserFileFileUserDirectional {
         int hash = 3;
         hash = 23 * hash + Objects.hashCode(this.user);
         hash = 23 * hash + (Objects.hashCode(this.fileName) + Objects.hashCode(this.fileName2));
+        hash = 23 * hash + Objects.hashCode(this.user2);
         return hash;
     }
 

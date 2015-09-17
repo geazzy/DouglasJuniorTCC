@@ -5,24 +5,19 @@
  */
 package br.edu.utfpr.cm.JGitMinerWeb.services.miner;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.kohsuke.github.GHRepository;
-
 /**
  *
  * @author zanoni
  */
 public class TesteUserServices {
 
-    public static void main(String[] args) {
-        try {
-            GHRepository repo = AuthServices.getGitHubClient().getRepository("rails/rails");
-            
-            System.out.println("s-" + UserServices.createEntity(null, null, true));
-        } catch (IOException ex) {
-            Logger.getLogger(TesteUserServices.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
+//    public static void main(String[] args) {
+//        try {
+//            GHRepository repo = AuthServices.getGitHubClient().getRepository("rails/rails");
+//            
+//            System.out.println("s-" + UserServices.createEntity(null, null, true));
+//        } catch (IOException ex) {
+//            Logger.getLogger(TesteUserServices.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//    }
 }

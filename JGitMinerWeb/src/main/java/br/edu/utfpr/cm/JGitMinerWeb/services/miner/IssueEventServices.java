@@ -8,19 +8,14 @@ import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityIssue;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityIssueEvent;
 import com.google.gson.reflect.TypeToken;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.kohsuke.github.GHEvent;
-import org.kohsuke.github.GHEventInfo;
-import org.kohsuke.github.GHEventPayload;
-import org.kohsuke.github.GHIssue;
-import org.kohsuke.github.GHPullRequest;
-import org.kohsuke.github.PagedIterable;
+import org.eclipse.egit.github.core.IssueEvent;
+import org.eclipse.egit.github.core.client.NoSuchPageException;
+import org.eclipse.egit.github.core.client.PageIterator;
+import org.eclipse.egit.github.core.client.PagedRequest;
 
 /**
  *
@@ -28,83 +23,64 @@ import org.kohsuke.github.PagedIterable;
  */
 public class IssueEventServices implements Serializable {
 
-//    public static List<GHEventInfo> getEventsByIssue(EntityIssue issue, String ownerRepositoryLogin, String repositoryName) {
-//        // repos/:owner/:repo/issues/:issue_number/events
-//        
-//        try {
-//           
-//            GHIssue gitIssue = AuthServices.getGitHubClient().
-//                    getRepository(ownerRepositoryLogin + "/" + repositoryName).getIssue(issue.getNumber());
-//            
-//            if (gitIssue.isPullRequest()){
-//                
-//                 List<GHEventInfo> issueEvents = new ArrayList<>();
-//                 
-//                 GHPullRequest gitPull = AuthServices.getGitHubClient().
-//                    getRepository(ownerRepositoryLogin + "/" + repositoryName).getPullRequest(issue.getNumber());
-//                 
-//                 gitPull.
-//            }
-//            
-//            
-//        } catch (IOException ex) {
-//            Logger.getLogger(IssueEventServices.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        
-//        
-//        try {
-//           
-//            PagedIterable<GHEventInfo> repositoryEventInfo;
-//            
-//            repositoryEventInfo = AuthServices.getGitHubClient().
-//                    getRepository(ownerRepositoryLogin + "/" + repositoryName).listEvents();
-//            
-//            for (GHEventInfo eventInfo : repositoryEventInfo) {
-//                if (eventInfo.getType().equals(GHEvent.PULL_REQUEST)) {
-//                    //issueEvents.add(eventInfo);
-//                    eventInfo.getPayload(GHEventPayload.PullRequest);
-//                }
-//            }
-//            return issueEvents;
-//
-//        } catch (RuntimeException ex) {
-//            ex.printStackTrace();
-//            return getEventsByIssue(issue, ownerRepositoryLogin, repositoryName);
-//        } catch (IOException ex) {
-//            Logger.getLogger(IssueEventServices.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        return null;
-//    }
-//
-//    public static EntityIssueEvent createEntity(GHEventInfo gitIssueEvent, GenericDao dao) {
-//        if (gitIssueEvent == null) {
-//            return null;
-//        }
-//        
-//        EntityIssueEvent issueEvent;// = getEventByIssueEventID(gitIssueEvent.getPayload(g), dao);
-//
-//        if (issueEvent == null) {
-//            issueEvent = new EntityIssueEvent();
-//
-//            issueEvent.setMineredAt(new Date());
-//            issueEvent.setCreatedAt(gitIssueEvent.getCreatedAt());
-//            issueEvent.setActor(UserServices.createEntity(gitIssueEvent.getActor(), dao, false));
-//            issueEvent.setCommitId(gitIssueEvent.);
-//            issueEvent.setEvent(gitIssueEvent.getType().toString());
-//            issueEvent.setIdIssueEvent(gitIssueEvent.);
-//            issueEvent.setUrl(null);
-//
-//            dao.insert(issueEvent);
-//        }
-//
-//        return issueEvent;
-//    }
-//
-//    private static EntityIssueEvent getEventByIssueEventID(long issueEventID, GenericDao dao) {
-//        List<EntityIssueEvent> events = dao.executeNamedQueryWithParams("IssueEvent.findByEventIssueID", new String[]{"idIssueEvent"}, new Object[]{issueEventID}, true);
-//        if (!events.isEmpty()) {
-//            return events.get(0);
-//        }
-//        return null;
-//    }
+    public static List<IssueEvent> getEventsByIssue(EntityIssue issue, String ownerRepositoryLogin, String repositoryName) {
+        // repos/:owner/:repo/issues/:issue_number/events
+        try {
+            StringBuilder uri = new StringBuilder("/repos");
+            uri.append('/').append(ownerRepositoryLogin);
+            uri.append('/').append(repositoryName);
+            uri.append("/issues");
+            uri.append('/').append(issue.getNumber());
+            uri.append("/events");
+            PagedRequest<IssueEvent> request = new PagedRequest<IssueEvent>(1, 100);
+            request.setUri(uri);
+            request.setType(new TypeToken<List<IssueEvent>>() {
+            }.getType());
+            PageIterator<IssueEvent> pageIterator = new PageIterator<IssueEvent>(request, AuthServices.getGitHubClient());
+            List<IssueEvent> elements = new ArrayList<IssueEvent>();
+            try {
+                while (pageIterator.hasNext()) {
+                    elements.addAll(pageIterator.next());
+                }
+            } catch (NoSuchPageException pageException) {
+                throw pageException;
+            }
+            return elements;
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
+            return getEventsByIssue(issue, ownerRepositoryLogin, repositoryName);
+        }
+    }
+
+    public static EntityIssueEvent createEntity(IssueEvent gitIssueEvent, GenericDao dao) {
+        if (gitIssueEvent == null) {
+            return null;
+        }
+
+        EntityIssueEvent issueEvent = getEventByIssueEventID(gitIssueEvent.getId(), dao);
+
+        if (issueEvent == null) {
+            issueEvent = new EntityIssueEvent();
+
+            issueEvent.setMineredAt(new Date());
+            issueEvent.setCreatedAt(gitIssueEvent.getCreatedAt());
+            issueEvent.setActor(UserServices.createEntity(gitIssueEvent.getActor(), dao, false));
+            issueEvent.setCommitId(gitIssueEvent.getCommitId());
+            issueEvent.setEvent(gitIssueEvent.getEvent());
+            issueEvent.setIdIssueEvent(gitIssueEvent.getId());
+            issueEvent.setUrl(gitIssueEvent.getUrl());
+
+            dao.insert(issueEvent);
+        }
+
+        return issueEvent;
+    }
+
+    private static EntityIssueEvent getEventByIssueEventID(long issueEventID, GenericDao dao) {
+        List<EntityIssueEvent> events = dao.executeNamedQueryWithParams("IssueEvent.findByEventIssueID", new String[]{"idIssueEvent"}, new Object[]{issueEventID}, true);
+        if (!events.isEmpty()) {
+            return events.get(0);
+        }
+        return null;
+    }
 }

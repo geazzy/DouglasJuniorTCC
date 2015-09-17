@@ -1,5 +1,7 @@
 package br.edu.utfpr.cm.JGitMinerWeb.services.metric;
 
+import br.edu.utfpr.cm.JGitMinerWeb.dao.AuxUser;
+import br.edu.utfpr.cm.JGitMinerWeb.dao.FileDAO;
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
 import br.edu.utfpr.cm.JGitMinerWeb.dao.PairFileDAO;
 import br.edu.utfpr.cm.JGitMinerWeb.model.matrix.EntityMatrix;
@@ -15,6 +17,7 @@ import br.edu.utfpr.cm.JGitMinerWeb.services.metric.centrality.BetweennessCalcul
 import br.edu.utfpr.cm.JGitMinerWeb.services.metric.centrality.ClosenessCalculator;
 import br.edu.utfpr.cm.JGitMinerWeb.services.metric.centrality.DegreeCalculator;
 import br.edu.utfpr.cm.JGitMinerWeb.services.metric.centrality.EigenvectorCalculator;
+import br.edu.utfpr.cm.JGitMinerWeb.services.metric.discussion.WordinessCalculator;
 import br.edu.utfpr.cm.JGitMinerWeb.services.metric.ego.EgoMeasure;
 import br.edu.utfpr.cm.JGitMinerWeb.services.metric.ego.EgoMeasureCalculator;
 import br.edu.utfpr.cm.JGitMinerWeb.services.metric.global.GlobalMeasure;
@@ -23,7 +26,11 @@ import br.edu.utfpr.cm.JGitMinerWeb.services.metric.structuralholes.StructuralHo
 import br.edu.utfpr.cm.JGitMinerWeb.services.metric.structuralholes.StructuralHolesMeasure;
 import br.edu.utfpr.cm.JGitMinerWeb.util.JsfUtil;
 import br.edu.utfpr.cm.JGitMinerWeb.util.JungExport;
+import br.edu.utfpr.cm.JGitMinerWeb.util.MathUtils;
 import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
+import br.edu.utfpr.cm.JGitMinerWeb.util.PathUtils;
+import br.edu.utfpr.cm.minerador.services.metric.model.CodeChurn;
+import br.edu.utfpr.cm.minerador.services.metric.model.IssueMetrics;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
 import edu.uci.ics.jung.graph.util.EdgeType;
 import java.text.SimpleDateFormat;
@@ -35,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.BooleanUtils;
 
 /**
  * 
@@ -115,55 +123,59 @@ public class PairFileGlobalCommunicationSingleEdgeSNAMetricsInDateServices exten
         // user | file | file2 | user2 | weigth
         out.printLog("Iniciado cálculo da métrica de matriz com " + getMatrix().getNodes().size() + " nodes. Parametros: " + params);
 
-        out.printLog("Iniciando construção da rede.");
+        out.printLog("Iniciando construÃ§ão da rede.");
 
         final Map<AuxFileFile, Set<String>> commitersPairFile = new HashMap<>();
         final Map<String, Integer> edgesWeigth = new HashMap<>();
         
-        // rede de comunicação global, com todos pares de arquivos
+        // rede de comunicaÃ§ão global, com todos pares de arquivos
         DirectedSparseGraph<String, String> graph = new DirectedSparseGraph<>();
         
-        // rede de comunicação de cada par de arquivo
+        // rede de comunicaÃ§ão de cada par de arquivo
         Map<AuxFileFile, DirectedSparseGraph<String, String>> pairFileNetwork = new HashMap<>();
         
         int countIgnored = 0;
-        
+        FileDAO fileDAO = new FileDAO(dao);
         PairFileDAO pairFileDAO = new PairFileDAO(dao);
-        Long numberOfAllPullrequestFuture = pairFileDAO
+        Long pullRequestsSize = pairFileDAO
                 .calculeNumberOfPullRequest(repository,
                         null, null, futureBeginDate, futureEndDate, true);
         
-        System.out.println("Number of all future pull requests: " + numberOfAllPullrequestFuture);
+        System.out.println("Number of all pull requests: " + pullRequestsSize);
         
-        Map<String, Long> futurePullRequest = new HashMap<>();
+        //Map<String, Long> futurePullRequest = new HashMap<>();
         
-        // construindo a rede de comunicação para cada par de arquivo (desenvolvedores que comentaram)
+        // construindo a rede de comunicaÃ§ão para cada par de arquivo (desenvolvedores que comentaram)
         int nodesSize = getMatrix().getNodes().size();
+        int count = 0;
+        Set<AuxFileFile> pairFilesSet = new HashSet<>();
         for (int i = 0; i < getMatrix().getNodes().size(); i++) {
-//            System.out.println(i + "/" + nodesSize);
+            if (count++ % 100 == 0 || count == nodesSize) {
+                System.out.println(count + "/" + nodesSize);
+            }
             EntityMatrixNode node = getMatrix().getNodes().get(i);
             String[] columns = node.getLine().split(JsfUtil.TOKEN_SEPARATOR);
 
             AuxFileFile pairFile = new AuxFileFile(columns[1], columns[2]);
-            
+            pairFilesSet.add(pairFile);
             // ignora %README%, %Rakefile, %CHANGELOG%, %Gemfile%, %.gitignore
-            if (isIgnored(pairFile.getFileName())
-                    || isIgnored(pairFile.getFileName2())) {
+//            if (isIgnored(pairFile.getFileName())
+//                    || isIgnored(pairFile.getFileName2())) {
 //                out.printLog("Ignoring " + pairFile);
-                countIgnored++;
-                continue;
-            }
+//                countIgnored++;
+//                continue;
+//            }
             
-            Long pairFileNumberOfPullrequestOfPairFuture;
-            if (futurePullRequest.containsKey(pairFile.toString())) {
-                pairFileNumberOfPullrequestOfPairFuture = futurePullRequest.get(pairFile.toString());
-            } else {
-                pairFileNumberOfPullrequestOfPairFuture = pairFileDAO
-                    .calculeNumberOfPullRequest(repository, 
-                            pairFile.getFileName(), pairFile.getFileName2(), 
-                            futureBeginDate, futureEndDate, true);
-                futurePullRequest.put(pairFile.toString(), pairFileNumberOfPullrequestOfPairFuture);
-            }
+//            Long pairFileNumberOfPullrequestOfPairFuture;
+//            if (futurePullRequest.containsKey(pairFile.toString())) {
+//                pairFileNumberOfPullrequestOfPairFuture = futurePullRequest.get(pairFile.toString());
+//            } else {
+//                pairFileNumberOfPullrequestOfPairFuture = pairFileDAO
+//                    .calculeNumberOfPullRequest(repository,
+//                            pairFile.getFileName(), pairFile.getFileName2(),
+//                            futureBeginDate, futureEndDate, true);
+//                futurePullRequest.put(pairFile.toString(), pairFileNumberOfPullrequestOfPairFuture);
+//            }
             
 //            Double supportPairFile = numberOfAllPullrequestFuture == 0 ? 0d : 
 //                    pairFileNumberOfPullrequestOfPairFuture.doubleValue() /
@@ -172,11 +184,11 @@ public class PairFileGlobalCommunicationSingleEdgeSNAMetricsInDateServices exten
             
             // minimum support is 0.01, ignore file if lower than this (0.01)
 //            if (supportPairFile < Double.valueOf(0.01d)) {
-            if (pairFileNumberOfPullrequestOfPairFuture < 2) {
+//            if (pairFileNumberOfPullrequestOfPairFuture < 2) {
 //                out.printLog("Ignoring " + pairFile + ": future pull requests " + pairFileNumberOfPullrequestOfPairFuture);
-                countIgnored++;
-                continue;
-            }
+//                countIgnored++;
+//                continue;
+//            }
             
             String commiter1 = columns[0];
             String commiter2 = columns[3];
@@ -199,12 +211,12 @@ public class PairFileGlobalCommunicationSingleEdgeSNAMetricsInDateServices exten
 //            String edgeName = pairFile.getFileName() + "-" + pairFile.getFileName2() + "-" + i;
             AuxUserUser pairUser = new AuxUserUser(columns[0], columns[3]);
             
-            /* Sum commit for each pair file that the pair dev has commited. */
+            /* Sum commit for each pair file that the pair devCommentter has commited. */
             // user > user2 - directed edge
             if (edgesWeigth.containsKey(pairUser.toStringUserAndUser2())) {
                 // edgeName = user + user2
                 edgesWeigth.put(pairUser.toStringUserAndUser2(), edgesWeigth.get(pairUser.toStringUserAndUser2()) + Integer.valueOf(columns[4]));
-//            
+//            // for undirectional graph
 //            } else if (edgesWeigth.containsKey(pairUser.toStringUser2AndUser())) {
 //                // edgeName = user2 + user - undirected edge
 //                edgesWeigth.put(pairUser.toStringUser2AndUser(), edgesWeigth.get(pairUser.toStringUser2AndUser()) + Integer.valueOf(columns[4]));
@@ -214,7 +226,7 @@ public class PairFileGlobalCommunicationSingleEdgeSNAMetricsInDateServices exten
             
             if (!graph.containsVertex(pairUser.getUser()) 
                     || !graph.containsVertex(pairUser.getUser2()) 
-                    || !graph.isNeighbor(pairUser.getUser(), pairUser.getUser2())) {
+                    || !graph.containsEdge(pairUser.toStringUserAndUser2())) {
                 graph.addEdge(pairUser.toStringUserAndUser2(), pairUser.getUser(), pairUser.getUser2(), EdgeType.DIRECTED);
             }
                 
@@ -223,23 +235,22 @@ public class PairFileGlobalCommunicationSingleEdgeSNAMetricsInDateServices exten
                 pairFileNetwork.get(pairFile)
                         .addEdge(pairUser.toStringUserAndUser2(), pairUser.getUser(), pairUser.getUser2(), EdgeType.DIRECTED);
             } else {
-                DirectedSparseGraph<String, String> graphMulti = 
-                        new DirectedSparseGraph<>();
+                DirectedSparseGraph<String, String> graphMulti
+                        = new DirectedSparseGraph<>();
                 graphMulti.addEdge(pairUser.toStringUserAndUser2(), pairUser.getUser(), pairUser.getUser2(), EdgeType.DIRECTED);
                 pairFileNetwork.put(pairFile, graphMulti);
             }
         }
         SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
         JungExport.exportToImage(graph, "C:/Users/a562273/Desktop/networks/", 
-                "Single" + format.format(beginDate) + " a " + format.format(endDate));
+                repository.getName() + " Single " + format.format(beginDate) + " a " + format.format(endDate));
         
         out.printLog("Número de pares de arquivos ignoradoa: " + countIgnored);
         
-//        int size = commitersPairFile.size();
-//        int i = 0;
         out.printLog("Número de autores de comentários (commenters): " + graph.getVertexCount());
         out.printLog("Número de pares de arquivos: " + commitersPairFile.size());
-        out.printLog("Iniciando cálculo das metricas.");
+        out.printLog("Número de pares de arquivos new: " + pairFilesSet.size());
+        out.printLog("Iniciando cálculo das métricas.");
 
         Set<AuxFileFileMetrics> fileFileMetrics = new HashSet<>();
         
@@ -247,19 +258,37 @@ public class PairFileGlobalCommunicationSingleEdgeSNAMetricsInDateServices exten
 
         GlobalMeasure global = GlobalMeasureCalculator.calcule(graph);
         out.printLog("Global measures: " + global.toString());
-//        Map<String, Double> barycenter = BarycenterCalculator.calcule(graph, edgesWeigth);
+        // Map<String, Double> barycenter = BarycenterCalculator.calcule(graph, edgesWeigth);
         Map<String, Double> betweenness = BetweennessCalculator.calcule(graph, edgesWeigth);
         Map<String, Double> closeness = ClosenessCalculator.calcule(graph, edgesWeigth);
         Map<String, Integer> degree = DegreeCalculator.calcule(graph);
-        Map<String, Double> eigenvector = EigenvectorCalculator.calcule(graph, edgesWeigth);
+         Map<String, Double> eigenvector = EigenvectorCalculator.calcule(graph, edgesWeigth);
         Map<String, EgoMeasure<String>> ego = EgoMeasureCalculator.calcule(graph, edgesWeigth);
         Map<String, StructuralHolesMeasure<String>> structuralHoles = StructuralHolesCalculator.calcule(graph, edgesWeigth);
 
-        out.printLog("Calculando somas, máximas, médias, updates e code churn para cada par de arquivos...");
+        // number of pull requests in date interval
+        Long numberOfAllPullrequestFuture = pairFileDAO.calculeNumberOfPullRequest(getRepository(), null, null, futureBeginDate, futureEndDate, true);
+        // cache for optimization number of pull requests where file is in,
+        // reducing access to database
+        Map<String, Long> pullRequestFileMap = new HashMap<>();
+        // cache for optimization file code churn (add, del, change),
+        // reducing access to database
+        Map<String, CodeChurn> codeChurnRequestFileMap = new HashMap<>();
+        Map<String, CodeChurn> cummulativeCodeChurnRequestFileMap = new HashMap<>();
+        // cache for optimization file commits made by user,
+        // reducing access to database
+        Map<String, CodeChurn> fileUserCommitMap = new HashMap<>();
+
+        out.printLog("Calculando somas, máximas, médias, updates, code churn e apriori para cada par de arquivos...");
+        count = 0;
+        final int size = commitersPairFile.entrySet().size();
+        out.printLog("Número de pares de arquivos: " + commitersPairFile.keySet().size());
         for (Map.Entry<AuxFileFile, Set<String>> entry : commitersPairFile.entrySet()) {
-//            System.out.println(++i + "/" + size);
+            if (count++ % 100 == 0 || count == size) {
+                System.out.println(count + "/" + size);
+            }
             AuxFileFile fileFile = entry.getKey();
-            Set<String> devs = entry.getValue();
+            Set<String> devsCommentters = entry.getValue();
             
             // pair file network
             GlobalMeasure pairFileGlobal = GlobalMeasureCalculator.calcule(pairFileNetwork.get(fileFile));
@@ -283,88 +312,185 @@ public class PairFileGlobalCommunicationSingleEdgeSNAMetricsInDateServices exten
             Double constraintSum = 0.0d, constraintAvg, constraintMax = Double.NEGATIVE_INFINITY;
             Double hierarchySum = 0.0d, hierarchyAvg, hierarchyMax = Double.NEGATIVE_INFINITY;
 
-            for (String dev : devs) {
+            for (String commenter : devsCommentters) {
                 // sums calculation
-//                barycenterSum += barycenter.get(dev);
-                betweennessSum += betweenness.get(dev);
-                closenessSum += Double.isInfinite(closeness.get(dev)) ? 0 : closeness.get(dev);
-                degreeSum += degree.get(dev);
-                eigenvectorSum += eigenvector.get(dev);
+//                barycenterSum += barycenter.get(commenter);
+                betweennessSum += betweenness.get(commenter);
+                closenessSum += Double.isInfinite(closeness.get(commenter)) ? 0 : closeness.get(commenter);
+                degreeSum += degree.get(commenter);
+//                eigenvectorSum += eigenvector.get(commenter);
 
-                egoBetweennessSum += ego.get(dev).getBetweennessCentrality();
-                egoSizeSum += ego.get(dev).getSize();
-//                egoPairsSum += ego.get(dev).getPairs();
-                egoTiesSum += ego.get(dev).getTies();
-                egoDensitySum += ego.get(dev).getDensity();
+                egoBetweennessSum += ego.get(commenter).getBetweennessCentrality();
+                egoSizeSum += ego.get(commenter).getSize();
+//                egoPairsSum += ego.get(commenter).getPairs();
+                egoTiesSum += ego.get(commenter).getTies();
+                egoDensitySum += ego.get(commenter).getDensity();
 
-                efficiencySum += structuralHoles.get(dev).getEfficiency();
-                effectiveSizeSum += structuralHoles.get(dev).getEffectiveSize();
-                constraintSum += structuralHoles.get(dev).getConstraint();
-                hierarchySum += structuralHoles.get(dev).getHierarchy();
-
+                efficiencySum += structuralHoles.get(commenter).getEfficiency();
+                effectiveSizeSum += structuralHoles.get(commenter).getEffectiveSize();
+                constraintSum += structuralHoles.get(commenter).getConstraint();
+                hierarchySum += structuralHoles.get(commenter).getHierarchy();
                 // maximum calculation
-//                barycenterMax = Math.max(barycenterMax, barycenter.get(dev));
-                betweennessMax = Math.max(betweennessMax, betweenness.get(dev));
-                closenessMax = Math.max(closenessMax, Double.isInfinite(closeness.get(dev)) ? 0 : closeness.get(dev));
-                degreeMax = Math.max(degreeMax, degree.get(dev));
-                eigenvectorMax = Math.max(eigenvectorMax, eigenvector.get(dev));
+//                barycenterMax = Math.max(barycenterMax, barycenter.get(commenter));
+                betweennessMax = Math.max(betweennessMax, betweenness.get(commenter));
+                closenessMax = Math.max(closenessMax, Double.isInfinite(closeness.get(commenter)) ? 0 : closeness.get(commenter));
+                degreeMax = Math.max(degreeMax, degree.get(commenter));
+                eigenvectorMax = Math.max(eigenvectorMax, eigenvector.get(commenter));
 
-                egoBetweennessMax = Math.max(egoBetweennessMax, ego.get(dev).getBetweennessCentrality());
-                egoSizeMax = Math.max(egoSizeMax, ego.get(dev).getSize());
-//                egoPairsMax = Math.max(egoPairsMax, ego.get(dev).getPairs());
-                egoTiesMax = Math.max(egoTiesMax, ego.get(dev).getTies());
-                egoDensityMax = Math.max(egoDensityMax, ego.get(dev).getDensity());
+                egoBetweennessMax = Math.max(egoBetweennessMax, ego.get(commenter).getBetweennessCentrality());
+                egoSizeMax = Math.max(egoSizeMax, ego.get(commenter).getSize());
+//                egoPairsMax = Math.max(egoPairsMax, ego.get(commenter).getPairs());
+                egoTiesMax = Math.max(egoTiesMax, ego.get(commenter).getTies());
+                egoDensityMax = Math.max(egoDensityMax, ego.get(commenter).getDensity());
 
-                efficiencyMax = Math.max(efficiencyMax, structuralHoles.get(dev).getEfficiency());
-                effectiveSizeMax = Math.max(effectiveSizeMax, structuralHoles.get(dev).getEffectiveSize());
-                constraintMax = Math.max(constraintMax, structuralHoles.get(dev).getConstraint());
-                hierarchyMax = Math.max(hierarchyMax, structuralHoles.get(dev).getHierarchy());
+                efficiencyMax = Math.max(efficiencyMax, structuralHoles.get(commenter).getEfficiency());
+                effectiveSizeMax = Math.max(effectiveSizeMax, structuralHoles.get(commenter).getEffectiveSize());
+                constraintMax = Math.max(constraintMax, structuralHoles.get(commenter).getConstraint());
+                hierarchyMax = Math.max(hierarchyMax, structuralHoles.get(commenter).getHierarchy());
 
             }
-            
-            // average calculation
-            double distinctCommentersCount = devs.size();
-//                barycenterAvg = barycenterSum / (double) distinctCommentersCount;
-            betweennessAvg = betweennessSum / (double) distinctCommentersCount;
-            closenessAvg = closenessSum / (double) distinctCommentersCount;
-            degreeAvg = degreeSum / (double) distinctCommentersCount;
-            eigenvectorAvg = eigenvectorSum / (double) distinctCommentersCount;
 
-            egoBetweennessAvg = egoBetweennessSum / (double) distinctCommentersCount;
-            egoSizeAvg = egoSizeSum / (double) distinctCommentersCount;
-//            egoPairsAvg = egoPairsSum / (double) distinctCommentersCount;
-            egoTiesAvg = egoTiesSum / (double) distinctCommentersCount;
-            egoDensityAvg = egoDensitySum / (double) distinctCommentersCount;
+            // Average calculation /////////////////////////////////////////////
+            Integer distinctCommentersCount = devsCommentters.size();
+//            barycenterAvg = barycenterSum / (double) distinctCommentersCount;
+            betweennessAvg = betweennessSum / distinctCommentersCount.doubleValue();
+            closenessAvg = closenessSum / distinctCommentersCount.doubleValue();
+            degreeAvg = degreeSum / distinctCommentersCount.doubleValue();
+            eigenvectorAvg = eigenvectorSum / distinctCommentersCount.doubleValue();
 
-            efficiencyAvg = efficiencySum / (double) distinctCommentersCount;
-            effectiveSizeAvg = effectiveSizeSum / (double) distinctCommentersCount;
-            constraintAvg = constraintSum / (double) distinctCommentersCount;
-            hierarchyAvg = hierarchySum / (double) distinctCommentersCount;
+            egoBetweennessAvg = egoBetweennessSum / distinctCommentersCount.doubleValue();
+            egoSizeAvg = egoSizeSum / distinctCommentersCount.doubleValue();
+//            egoPairsAvg = egoPairsSum / distinctCommentersCount;
+            egoTiesAvg = egoTiesSum / distinctCommentersCount.doubleValue();
+            egoDensityAvg = egoDensitySum / distinctCommentersCount.doubleValue();
+
+            efficiencyAvg = efficiencySum / distinctCommentersCount.doubleValue();
+            effectiveSizeAvg = effectiveSizeSum / distinctCommentersCount.doubleValue();
+            constraintAvg = constraintSum / distinctCommentersCount.doubleValue();
+            hierarchyAvg = hierarchySum / distinctCommentersCount.doubleValue();
+
+            // Weighted geometric average: issue > committers + commits ////////
+            final long[][] committersCommitsPerIssue = pairFileDAO.calculeCommittersXCommits(
+                    repository, fileFile.getFileName(), fileFile.getFileName2(), beginDate, endDate);
+            final double geometricAverageCommittersCommits
+                    = MathUtils.calculateWeightedGeometricAverage(committersCommitsPerIssue);
+
+            // Commit-based metrics ////////////////////////////////////////////
+            final long changes = calculeFileCodeChurn(codeChurnRequestFileMap, fileFile.getFileName(), fileDAO, beginDate, endDate);
+            final long changes2 = calculeFileCodeChurn(codeChurnRequestFileMap, fileFile.getFileName2(), fileDAO, beginDate, endDate);
+
+            final long cummulativeChanges = calculeFileCodeChurn(cummulativeCodeChurnRequestFileMap, fileFile.getFileName(), fileDAO, null, endDate);
+            final long cummulativeChanges2 = calculeFileCodeChurn(cummulativeCodeChurnRequestFileMap, fileFile.getFileName2(), fileDAO, null, endDate);
+
+            Set<AuxUser> devsCommitters = pairFileDAO.selectCommitters(repository,
+                    fileFile.getFileName(), fileFile.getFileName2(), beginDate, endDate);
+
+            Long devCommitsSum = 0l, devCommitsMax = 0l;
+            Double devCommitsAvg;
+            Double ownershipSum = 0.0d, ownershipAvg, ownershipMax = 0.0d;
+            Long minorContributors = 0l, majorContributors = 0l;
+            Double ownerExperience = 0.0d, ownerExperience2 = 0.0d, cummulativeOwnerExperience = 0.0d, cummulativeOwnerExperience2 = 0.0d;
+
+            long committers = devsCommitters.size();
+            long distinctCommitters = pairFileDAO.calculeCommitters(repository,
+                    fileFile.getFileName(), fileFile.getFileName2(), null, endDate);
+
+            Long commits = pairFileDAO.calculeCommits(repository,
+                    fileFile.getFileName(), fileFile.getFileName2(),
+                    beginDate, endDate);
+
+            for (AuxUser devCommitter : devsCommitters) {
+                Long devCommits = pairFileDAO.calculeCommits(repository,
+                        fileFile.getFileName(), fileFile.getFileName2(), devCommitter.getUser(),
+                        beginDate, endDate);
+                devCommitsSum += devCommits;
+
+                Double ownership = devCommits.doubleValue() / commits.doubleValue();
+                ownershipSum += ownership;
+
+                if (ownership <= 0.05) { // menor ou igual que 5% = minor
+                    minorContributors++;
+                } else { // maior que 5% = major
+                    majorContributors++;
+                }
+
+                devCommitsMax = Math.max(devCommitsMax, devCommits);
+                ownershipMax = Math.max(ownershipMax, ownership);
+
+                // Calculing OEXP of each file
+                Double experience = calculeDevFileExperience(changes, fileUserCommitMap, fileFile.getFileName(), devCommitter.getUser(), fileDAO, beginDate, endDate);
+                ownerExperience = Math.max(experience, ownerExperience);
+
+                Double experience2 = calculeDevFileExperience(changes2, fileUserCommitMap, fileFile.getFileName2(), devCommitter.getUser(), fileDAO, beginDate, endDate);
+                ownerExperience2 = Math.max(experience2, ownerExperience2);
+
+                // Calculing OWN
+                Double cumulativeExperience = calculeDevFileExperience(cummulativeChanges, fileUserCommitMap, fileFile.getFileName(), devCommitter.getUser(), fileDAO, null, endDate);
+                cummulativeOwnerExperience = Math.max(cummulativeOwnerExperience, cumulativeExperience);
+
+                Double cumulativeExperience2 = calculeDevFileExperience(cummulativeChanges2, fileUserCommitMap, fileFile.getFileName2(), devCommitter.getUser(), fileDAO, null, endDate);
+                cummulativeOwnerExperience2 = Math.max(cummulativeOwnerExperience2, cumulativeExperience2);
+
+            }
+
+            devCommitsAvg = (double) devCommitsSum / (double) committers;
+            ownershipAvg = (double) ownershipSum / (double) committers;
+
+//            double majorContributorsRate = (double) majorContributors / (double) committers; // % de major
+//            double minorContributorsRate = (double) minorContributors / (double) committers; // % de minor
 
             Long updates = pairFileDAO.calculeNumberOfPullRequest(repository,
                     fileFile.getFileName(), fileFile.getFileName2(), 
                     beginDate, endDate, true);
 
-            Long futureUpdates = pairFileDAO.calculeNumberOfPullRequest(repository,
-                    fileFile.getFileName(), fileFile.getFileName2(), 
-                    futureBeginDate, futureEndDate, true);
+            Long futureUpdates;
+            if (beginDate.equals(futureBeginDate) && endDate.equals(futureEndDate)) {
+                futureUpdates = updates;
+            } else {
+                futureUpdates = pairFileDAO.calculeNumberOfPullRequest(repository,
+                        fileFile.getFileName(), fileFile.getFileName2(),
+                        futureBeginDate, futureEndDate, true);
+            }
+
+            // list all issues and its comments
+            List<IssueMetrics> issuesAndComments = pairFileDAO.listIssues(repository,
+                    fileFile.getFileName(), fileFile.getFileName2(), beginDate, endDate, true);
+
+            long wordiness = 0;
+            for (IssueMetrics auxWordiness : issuesAndComments) {
+                wordiness += WordinessCalculator.calcule(auxWordiness.getIssueBody(), auxWordiness.getComments());
+            }
 
             Long commentsSum = pairFileDAO.calculeComments(repository,
                     fileFile.getFileName(), fileFile.getFileName2(), 
                     beginDate, endDate, true);
 
-            Long codeChurn = pairFileDAO.calculeCodeChurn(repository,
-                    fileFile.getFileName(), fileFile.getFileName2(), 
-                    beginDate, endDate);
-            Long codeChurn2 = pairFileDAO.calculeCodeChurn(repository,
+            Long codeChurn = fileDAO.calculeCodeChurn(repository,
+                    fileFile.getFileName(), beginDate, endDate);
+            Long codeChurn2 = fileDAO.calculeCodeChurn(repository,
+                    fileFile.getFileName2(), beginDate, endDate);
+
+            CodeChurn pairFileCodeChurn = pairFileDAO.calculeCodeChurnAddDelChange(repository,
                     fileFile.getFileName2(), fileFile.getFileName(),
                     beginDate, endDate);
 
             double codeChurnAvg = (codeChurn + codeChurn2) / 2.0d;
 
+            closenessSum = MathUtils.zeroIfNaN(closenessSum);
+            closenessAvg = MathUtils.zeroIfNaN(closenessAvg);
+            closenessMax = MathUtils.zeroIfNaN(closenessMax);
+
+            // pair file age in release interval (days)
+            int ageRelease = pairFileDAO.calculePairFileDaysAge(repository, fileFile.getFileName(), fileFile.getFileName2(), beginDate, endDate, true);
+
+            // pair file age in total until final date (days)
+            int ageTotal = pairFileDAO.calculePairFileDaysAge(repository, fileFile.getFileName(), fileFile.getFileName2(), null, endDate, true);
+
+            boolean samePackage = PathUtils.isSameFullPath(fileFile.getFileName(), fileFile.getFileName2());
+
             AuxFileFileMetrics auxFileFileMetrics = new AuxFileFileMetrics(
-                    fileFile.getFileName(), fileFile.getFileName2(), 
-//                        barycenterSum, barycenterAvg, barycenterMax,
+                    fileFile.getFileName(), fileFile.getFileName2(), BooleanUtils.toInteger(samePackage),
+                    //                        barycenterSum, barycenterAvg, barycenterMax,
                     betweennessSum, betweennessAvg, betweennessMax,
                     closenessSum, closenessAvg, closenessMax,
                     degreeSum, degreeAvg, degreeMax,
@@ -383,44 +509,129 @@ public class PairFileGlobalCommunicationSingleEdgeSNAMetricsInDateServices exten
 
                     pairFileGlobal.getSize(), pairFileGlobal.getTies(),
                     pairFileGlobal.getDensity(), pairFileGlobal.getDiameter(), 
-
-                    distinctCommentersCount, commentsSum,
+                    devCommitsSum, devCommitsAvg, devCommitsMax,
+                    ownershipSum, ownershipAvg, ownershipMax,
+                    majorContributors, minorContributors,
+                    ownerExperience, ownerExperience2,
+                    cummulativeOwnerExperience, cummulativeOwnerExperience2,
+                    committers, distinctCommitters, commits, geometricAverageCommittersCommits,
+                    distinctCommentersCount, commentsSum, wordiness,
                     codeChurn, codeChurn2, codeChurnAvg,
-                    updates, futureUpdates
+                    pairFileCodeChurn.getAdditionsNormalized(), pairFileCodeChurn.getDeletionsNormalized(), pairFileCodeChurn.getChanges(),
+                    ageRelease, ageTotal, updates, futureUpdates
+            );
+
+            // apriori /////////////////////////////////////////////////////////
+            Long fileNumberOfPullrequestOfPairFuture
+                    = calculeNumberOfPullRequest(pullRequestFileMap, auxFileFileMetrics.getFile(), pairFileDAO, futureBeginDate, futureEndDate);
+
+            Long file2NumberOfPullrequestOfPairFuture
+                    = calculeNumberOfPullRequest(pullRequestFileMap, auxFileFileMetrics.getFile2(), pairFileDAO, futureBeginDate, futureEndDate);
+
+            auxFileFileMetrics.addMetrics(fileNumberOfPullrequestOfPairFuture, file2NumberOfPullrequestOfPairFuture, numberOfAllPullrequestFuture);
+
+            Double supportFile = fileNumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
+            Double supportFile2 = file2NumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
+            Double supportPairFile = futureUpdates.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
+            Double confidence = supportFile == 0 ? 0d : supportPairFile / supportFile;
+            Double confidence2 = supportFile2 == 0 ? 0d : supportPairFile / supportFile2;
+            Double lift = supportFile * supportFile2 == 0 ? 0d : supportPairFile / (supportFile * supportFile2);
+            Double conviction = 1 - confidence == 0 ? 0d : (1 - supportFile) / (1 - confidence);
+            Double conviction2 = 1 - confidence2 == 0 ? 0d : (1 - supportFile2) / (1 - confidence2);
+
+            auxFileFileMetrics.addMetrics(
+                    supportFile, supportFile2, supportPairFile,
+                    confidence, confidence2,
+                    lift,
+                    conviction, conviction2
             );
 
             fileFileMetrics.add(auxFileFileMetrics);
         }
 
+        out.printLog("Número de pares de arquivos: " + fileFileMetrics.size());
         addToEntityMetricNodeList(fileFileMetrics);
     }
-    
+
+    public Long calculeNumberOfPullRequest(Map<String, Long> pullRequestFileMap, String fileName, PairFileDAO pairFileDAO, Date futureBeginDate, Date futureEndDate) {
+        Long fileNumberOfPullrequestOfPairFuture;
+        if (pullRequestFileMap.containsKey(fileName)) {
+            fileNumberOfPullrequestOfPairFuture = pullRequestFileMap.get(fileName);
+        } else {
+            fileNumberOfPullrequestOfPairFuture = pairFileDAO.calculeNumberOfPullRequest(getRepository(), fileName, null, futureBeginDate, futureEndDate, true);
+            pullRequestFileMap.put(fileName, fileNumberOfPullrequestOfPairFuture);
+        }
+        return fileNumberOfPullrequestOfPairFuture;
+    }
+
+    public long calculeFileCodeChurn(Map<String, CodeChurn> codeChurnRequestFileMap, String fileName, FileDAO fileDAO, Date beginDate, Date endDate) {
+        final long /*additions, deletions,*/ changes;
+        if (codeChurnRequestFileMap.containsKey(fileName)) { // cached
+            CodeChurn sumCodeChurnFile = codeChurnRequestFileMap.get(fileName);
+//                additions = sumCodeChurnFile.getAdditions();
+//                deletions = sumCodeChurnFile.getDeletions();
+            changes = sumCodeChurnFile.getChanges();
+        } else {
+            CodeChurn sumCodeChurnFile = fileDAO.sumCodeChurnByFilename(repository, fileName, beginDate, endDate);
+            codeChurnRequestFileMap.put(fileName, sumCodeChurnFile);
+//                additions = sumCodeChurnFile.getAdditions();
+//                deletions = sumCodeChurnFile.getDeletions();
+            changes = sumCodeChurnFile.getChanges();
+        }
+        return changes;
+    }
+
+    public double calculeDevFileExperience(final Long changes, Map<String, CodeChurn> fileUserCommitMap, String fileName, String user, FileDAO fileDAO, Date beginDate, Date endDate) {
+        final long /*devAdditions, devDeletions,*/ devChanges;
+        if (fileUserCommitMap.containsKey(fileName)) { // cached
+            CodeChurn sumCodeChurnFile = fileUserCommitMap.get(fileName);
+//                    devAdditions = sumCodeChurnFile.getAdditions();
+//                    devDeletions = sumCodeChurnFile.getDeletions();
+            devChanges = sumCodeChurnFile.getChanges();
+        } else {
+            CodeChurn sumCodeChurnFile = fileDAO.sumCodeChurnByFilename(repository,
+                    fileName, user, beginDate, endDate
+            );
+            fileUserCommitMap.put(fileName, sumCodeChurnFile);
+//                    devAdditions = sumCodeChurnFile.getAdditions();
+//                    devDeletions = sumCodeChurnFile.getDeletions();
+            devChanges = sumCodeChurnFile.getChanges();
+        }
+
+        return changes == 0 ? 0.0d : (double) devChanges / (double) changes;
+    }
+
     @Override
     public String getHeadCSV() {
-        return "file;file2;"
-                
-//                + "brcAvg;brcSum;brcMax;"
+        return "file;file2;samePackage;"
+                // + "brcAvg;brcSum;brcMax;"
                 + "btwSum;btwAvg;btwMax;"
                 + "clsSum;clsAvg;clsMax;"
                 + "dgrSum;dgrAvg;dgrMax;"
-                + "egvSum;egvAvg;egvMax;"
-                
+                 + "egvSum;egvAvg;egvMax;"
                 + "egoBtwSum;egoBtwAvg;egoBtwMax;"
                 + "egoSizeSum;egoSizeAvg;egoSizeMax;"
                 + "egoTiesSum;egoTiesAvg;egoTiesMax;"
-//                + "egoPairsSum;egoPairsAvg;egoPairsMax;"
+                // + "egoPairsSum;egoPairsAvg;egoPairsMax;"
                 + "egoDensitySum;egoDensityAvg;egoDensityMax;"
-                
                 + "efficiencySum;efficiencyAvg;efficiencyMax;"
                 + "efvSizeSum;efvSizeAvg;efvSizeMax;"
                 + "constraintSum;constraintAvg;constraintMax;"
                 + "hierarchySum;hierarchyAvg;hierarchyMax;"
-                
                 + "size;ties;density;diameter;"
-                
-                + "commenters;comments;"
+                + "devCommitsSum;devCommitsAvg;devCommitsMax;"
+                + "ownershipSum;ownershipAvg;ownershipMax;"
+                + "majorContributors;minorContributors;"
+                + "oexp;oexp2;"
+                + "own;own2;"
+                + "adev;ddev;commits;wgaCommittersCommit;"
+                + "commenters;comments;wordiness;"
                 + "codeChurn;codeChurn2;codeChurnAvg;"
-                + "updates;futureUpdates";
+                + "add;del;changes;"
+                + "ageRelease;ageTotal;"
+                + "updates;futureUpdates;"
+                + "fileChangeFuture;file2ChangeFuture;allPullrequestFuture;"
+                + "supportFile;supportFile2;supportPairFile;confidence;confidence2;lift;conviction;conviction2";
     }
 
     @Override
@@ -440,7 +651,7 @@ public class PairFileGlobalCommunicationSingleEdgeSNAMetricsInDateServices exten
         }
         return null;
     }
-    
+
     private boolean isIgnored(String fileName) {
         return fileName.contains("README")
                 || fileName.endsWith("Rakefile")

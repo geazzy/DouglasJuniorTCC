@@ -22,8 +22,10 @@ import javax.persistence.Lob;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderColumn;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
+import javax.persistence.Transient;
 
 /**
  *
@@ -32,7 +34,7 @@ import javax.persistence.Temporal;
 @Entity
 @Table(name = "metric")
 @NamedQueries({
-    @NamedQuery(name = "Metric.findAllTheLatest", query = "SELECT m FROM EntityMetric m ORDER BY m.started DESC")
+    @NamedQuery(name = "Metric.findAllTheLatest", query = "SELECT m FROM EntityMetric m ORDER BY m.id DESC")
 })
 public class EntityMetric implements InterfaceEntity, Startable {
 
@@ -48,11 +50,14 @@ public class EntityMetric implements InterfaceEntity, Startable {
     @Lob
     @Basic(fetch = FetchType.LAZY)
     private String log;
-    private Map params;
+    private Map<Object, Object> params;
+    @OrderColumn(name = "index")
     @OneToMany(mappedBy = "metric", orphanRemoval = true, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<EntityMetricNode> nodes;
     private String classServicesName;
     private String matrix;
+    @Transient
+    private String additionalFilename;
 
     public EntityMetric() {
         started = new Date();
@@ -139,11 +144,19 @@ public class EntityMetric implements InterfaceEntity, Startable {
         this.classServicesName = classServices;
     }
 
-    public Map getParams() {
+    public String getAdditionalFilename() {
+        return additionalFilename;
+    }
+
+    public void setAdditionalFilename(String additionalFilename) {
+        this.additionalFilename = additionalFilename;
+    }
+
+    public Map<Object, Object> getParams() {
         return params;
     }
 
-    public void setParams(Map params) {
+    public void setParams(Map<Object, Object> params) {
         this.params = params;
     }
 
@@ -168,7 +181,12 @@ public class EntityMetric implements InterfaceEntity, Startable {
 
     @Override
     public String toString() {
-        return "br.edu.utfpr.cm.JGitMinerWeb.pojo.metric.EntityMetric[ id=" + id + " ]";
+        final Object additionalFilename = params.get("additionalFilename");
+        if (additionalFilename != null) {
+            return matrix + " metrics " + additionalFilename;
+        } else {
+            return matrix + " metrics";
+        }
     }
 
     @Override

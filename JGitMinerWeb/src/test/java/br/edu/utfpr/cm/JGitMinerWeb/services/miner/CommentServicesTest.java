@@ -10,7 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.kohsuke.github.GHRepository;
+//import org.kohsuke.github.GHRepository;
 
 /**
  *
@@ -18,24 +18,24 @@ import org.kohsuke.github.GHRepository;
  */
 public class CommentServicesTest {
     
-    public CommentServicesTest() {
-    }
-
-    // TODO add test methods here.
-    // The methods must be annotated with annotation @Test. For example:
-    //
-     @Test
-     public void getRepositoryTest() {
-         
-        try {
-            GHRepository repo = AuthServices.getGitHubClient().getRepository("rails/rails");
-            assertEquals("rails/rails", repo.getFullName());
-            //20244
-            assertEquals(2, repo.getIssue(20244).getCommentsCount());
-                    
-            
-        } catch (IOException ex) {
-            Logger.getLogger(CommentServicesTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
-     }
+//    public CommentServicesTest() {
+//    }
+//
+//    // TODO add test methods here.
+//    // The methods must be annotated with annotation @Test. For example:
+//    //
+//     @Test
+//     public void getRepositoryTest() {
+//         
+//        try {
+//            GHRepository repo = AuthServices.getGitHubClient().getRepository("rails/rails");
+//            assertEquals("rails/rails", repo.getFullName());
+//            //20244
+//            assertEquals(2, repo.getIssue(20244).getCommentsCount());
+//                    
+//            
+//        } catch (IOException ex) {
+//            Logger.getLogger(CommentServicesTest.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//     }
 }

@@ -1,12 +1,7 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.edu.utfpr.cm.JGitMinerWeb.model.matrix;
 
 import br.edu.utfpr.cm.JGitMinerWeb.model.InterfaceEntity;
 import br.edu.utfpr.cm.JGitMinerWeb.model.Startable;
-import br.edu.utfpr.cm.JGitMinerWeb.util.Util;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -23,8 +18,11 @@ import javax.persistence.Lob;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderColumn;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
+import javax.persistence.Transient;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -33,7 +31,7 @@ import javax.persistence.Temporal;
 @Entity
 @Table(name = "matrix")
 @NamedQueries({
-    @NamedQuery(name = "Matrix.findAllTheLatest", query = "SELECT m FROM EntityMatrix m ORDER BY m.started DESC")
+    @NamedQuery(name = "Matrix.findAllTheLatest", query = "SELECT m FROM EntityMatrix m ORDER BY m.id DESC")
 })
 public class EntityMatrix implements InterfaceEntity, Startable {
 
@@ -49,17 +47,20 @@ public class EntityMatrix implements InterfaceEntity, Startable {
     @Lob
     @Basic(fetch = FetchType.LAZY)
     private String log;
-    private Map params;
+    private Map<Object, Object> params;
     private String classServicesName;
     private String repository;
+    @OrderColumn(name = "index")
     @OneToMany(mappedBy = "matrix", orphanRemoval = true, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<EntityMatrixNode> nodes;
+    @Transient
+    private String additionalFilename;
 
     public EntityMatrix() {
         started = new Date();
         complete = false;
         nodes = new ArrayList<>();
-        params = new HashMap();
+        params = new HashMap<>();
     }
 
     @Override
@@ -96,7 +97,7 @@ public class EntityMatrix implements InterfaceEntity, Startable {
         this.stoped = stoped;
     }
 
-    public Map getParams() {
+    public Map<Object, Object> getParams() {
         return params;
     }
 
@@ -136,6 +137,14 @@ public class EntityMatrix implements InterfaceEntity, Startable {
         this.classServicesName = classServices;
     }
 
+    public String getAdditionalFilename() {
+        return additionalFilename;
+    }
+
+    public void setAdditionalFilename(String additionalFilename) {
+        this.additionalFilename = additionalFilename;
+    }
+
     public String getRepository() {
         return repository;
     }
@@ -165,15 +174,34 @@ public class EntityMatrix implements InterfaceEntity, Startable {
 
     @Override
     public String toString() {
-        return "(" + id + ") " + repository + " - " + getClassServicesSingleName() + " - " + Util.dateDataToString(started, "dd/MM/yyyy HH:mm:ss");
+        final Object filename = params.get("filename");
+        if (filename != null) {
+            final Object additionalFilename = params.get("additionalFilename");
+            if (additionalFilename != null) {
+                return repository + " " + filename + " " + additionalFilename;
+            }
+            return repository + " " + filename;
+        } else {
+            return repository;
+        }
     }
 
     @Override
     public String getDownloadFileName() {
-        return this.repository + "-" + this.started;
+        final Object filename = params.get("filename");
+        if (filename != null && StringUtils.isNotBlank(filename.toString())) {
+
+            final Object additionalFilename = params.get("additionalFilename");
+            if (additionalFilename != null) {
+                return repository + " " + filename + " " + additionalFilename;
+            }
+            return repository + " " + filename;
+        } else {
+            return this.repository;
+        }
     }
 
-    public void setParams(Map params) {
+    public void addAllParams(Map<Object, Object> params) {
         this.params.putAll(params);
     }
 

@@ -1,18 +1,16 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.edu.utfpr.cm.JGitMinerWeb.services.miner;
 
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityTree;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityTreeEntry;
+import br.edu.utfpr.cm.JGitMinerWeb.services.miner.AuthServices;
+import br.edu.utfpr.cm.JGitMinerWeb.services.miner.TreeService;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GHTree;
-import org.kohsuke.github.GHTreeEntry;
+import org.eclipse.egit.github.core.Repository;
+import org.eclipse.egit.github.core.Tree;
+import org.eclipse.egit.github.core.TreeEntry;
 
 /**
  *
@@ -20,14 +18,13 @@ import org.kohsuke.github.GHTreeEntry;
  */
 public class TreeServices implements Serializable  {
 
-    public static EntityTree createTreeEntity(GHTree gitTree, GHRepository gitRepo, GenericDao dao) {
+    public static EntityTree createTreeEntity(Tree gitTree, Repository gitRepo, GenericDao dao) {
         if (gitTree == null) {
             return null;
         }
 
         try {
-            gitTree = AuthServices.getGitHubClient().getRepository(gitRepo.getFullName()).getTree(gitTree.getSha());
-            //gitTree = new TreeService(AuthServices.getGitHubClient()).getTree(gitRepo, gitTree.getSha());
+            gitTree = new TreeService(AuthServices.getGitHubClient()).getTree(gitRepo, gitTree.getSha());
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -40,7 +37,7 @@ public class TreeServices implements Serializable  {
 
         tree.setMineredAt(new Date());
         tree.setSha(gitTree.getSha());
-        tree.setUrl(gitTree.getUrl().toString());
+        tree.setUrl(gitTree.getUrl());
 
         if (tree.getId() == null || tree.getId().equals(new Long(0))) {
             dao.insert(tree);
@@ -61,9 +58,9 @@ public class TreeServices implements Serializable  {
         return null;
     }
 
-    private static void createTreeEntryEntitys(List<GHTreeEntry> gitTreeEntitys, EntityTree tree, GenericDao dao) {
+    private static void createTreeEntryEntitys(List<TreeEntry> gitTreeEntitys, EntityTree tree, GenericDao dao) {
         if (gitTreeEntitys != null) {
-            for (GHTreeEntry gitTreeEntry : gitTreeEntitys) {
+            for (TreeEntry gitTreeEntry : gitTreeEntitys) {
                 EntityTreeEntry treeEntry = null;// findTreeEntryByURL(gitTreeEntry.getUrl(), dao);
 
                 if (treeEntry == null) {
@@ -76,7 +73,7 @@ public class TreeServices implements Serializable  {
                 treeEntry.setSha(gitTreeEntry.getSha());
                 treeEntry.setSizeTreeEntry(gitTreeEntry.getSize());
                 treeEntry.setType(gitTreeEntry.getType());
-                treeEntry.setUrl(gitTreeEntry.getUrl().toString());
+                treeEntry.setUrl(gitTreeEntry.getUrl());
                 tree.addTreeEntry(treeEntry);
 
                 if (treeEntry.getId() == null || treeEntry.getId().equals(new Long(0))) {

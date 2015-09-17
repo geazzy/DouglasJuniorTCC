@@ -7,15 +7,15 @@ package br.edu.utfpr.cm.JGitMinerWeb.services.miner;
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityUser;
 import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GHUser;
+import org.eclipse.egit.github.core.Repository;
+import org.eclipse.egit.github.core.User;
+import org.eclipse.egit.github.core.service.CollaboratorService;
+import org.eclipse.egit.github.core.service.UserService;
+import org.eclipse.egit.github.core.service.WatcherService;
 
 /**
  *
@@ -31,108 +31,84 @@ public class UserServices implements Serializable {
         return null;
     }
 
-    public static EntityUser createEntity(GHUser gitUser, GenericDao dao, boolean firstMiner) {
-       
-        try {
-            if (gitUser == null) {
-                return null;
-            }
-            
-            
-            EntityUser user = getUserByLogin(gitUser.getLogin(), dao);
-            GHUser ghUser = AuthServices.getGitHubClient().getUser(gitUser.getLogin());
-            
-            if (firstMiner || user == null) {
-                try {
-                    if (user == null) {
-                        user = new EntityUser();
-                    }
-                    
-                    
-                    
-                    user.setCreatedAt(ghUser.getCreatedAt());
-                    user.setCollaborators(0);
-                    user.setDiskUsage(0);
-                    user.setFollowers(ghUser.getFollowersCount());
-                    user.setFollowing(ghUser.getFollowingCount());
-                    user.setOwnedPrivateRepos(0);
-                    user.setPrivateGists(0);
-                    user.setPublicGists(ghUser.getPublicGistCount());
-                    user.setPublicRepos(ghUser.getPublicRepoCount());
-                    user.setTotalPrivateRepos(0);
-                    user.setAvatarUrl(ghUser.getBlog());
-                    user.setCompany(ghUser.getCompany());
-                    user.setEmail(ghUser.getEmail());
-                    user.setHtmlUrl(ghUser.getHtmlUrl().toString());
-                    user.setLocation(ghUser.getLocation());
-                    user.setName(ghUser.getName());
-                    user.setType(ghUser.getClass().getSimpleName());
-                } catch (IOException ex) {
-                    Logger.getLogger(UserServices.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                
-            }
-
-            user.setMineredAt(
-                    new Date());
-            user.setGravatarId(ghUser.getAvatarUrl());
-            user.setIdUser(ghUser.getId());
-            user.setLogin(ghUser.getLogin());
-            user.setUrl(ghUser.getUrl().toString());
-            
-            if (user.getId()
-                    == null || user.getId().equals(new Long(0))) {
-                dao.insert(user);
-            } else {
-                dao.edit(user);
-            }
-            
-            return user;
-        } catch (IOException ex) {
-            Logger.getLogger(UserServices.class.getName()).log(Level.SEVERE, null, ex);
+    public static EntityUser createEntity(User gitUser, GenericDao dao, boolean firstMiner) {
+        if (gitUser == null) {
+            return null;
         }
-        return null;
+
+        EntityUser user = getUserByLogin(gitUser.getLogin(), dao);
+
+        if (firstMiner || user == null) {
+            if (user == null) {
+                user = new EntityUser();
+            }
+            if (gitUser.getLogin() != null
+                    && (gitUser.getEmail() == null
+                    || gitUser.getName() == null)) {
+                gitUser = getGitUserByLogin(gitUser.getLogin());
+            }
+            user.setCreatedAt(gitUser.getCreatedAt());
+            user.setCollaborators(gitUser.getCollaborators());
+            user.setDiskUsage(gitUser.getDiskUsage());
+            user.setFollowers(gitUser.getFollowers());
+            user.setFollowing(gitUser.getFollowing());
+            user.setOwnedPrivateRepos(gitUser.getOwnedPrivateRepos());
+            user.setPrivateGists(gitUser.getPrivateGists());
+            user.setPublicGists(gitUser.getPublicGists());
+            user.setPublicRepos(gitUser.getPublicRepos());
+            user.setTotalPrivateRepos(gitUser.getTotalPrivateRepos());
+            user.setAvatarUrl(gitUser.getBlog());
+            user.setCompany(gitUser.getCompany());
+            user.setEmail(gitUser.getEmail());
+            user.setHtmlUrl(gitUser.getHtmlUrl());
+            user.setLocation(gitUser.getLocation());
+            user.setName(gitUser.getName());
+            user.setType(gitUser.getType());
+        }
+
+        user.setMineredAt(new Date());
+        user.setGravatarId(gitUser.getGravatarId());
+        user.setIdUser(gitUser.getId());
+        user.setLogin(gitUser.getLogin());
+        user.setUrl(gitUser.getUrl());
+
+        if (user.getId() == null || user.getId().equals(0l)) {
+            dao.insert(user);
+        } else {
+            dao.edit(user);
+        }
+
+        return user;
     }
 
-    public static List<GHUser> getGitCollaboratorsFromRepository(GHRepository gitRepo, OutLog out) throws Exception {
-
-        List<GHUser> users = new ArrayList<GHUser>();
-
+    public static User getGitUserByLogin(String login) {
+        User user = null;
         try {
-
-            out.printLog("Baixando Collaborators...\n");
-            users.addAll(AuthServices.getGitHubClient().getRepository(gitRepo.getFullName()).getCollaborators());
-            out.printLog(users.size() + " Collaborators baixados!");
-
+            user = new UserService(AuthServices.getGitHubClient()).getUser(login);
         } catch (Exception ex) {
+            ex.printStackTrace();
+            System.out.println("Erro ao consultar usuário \"" + login + "\": " + ex.toString());
+        }
+        return user;
+    }
 
+    public static List<User> getGitCollaboratorsFromRepository(Repository gitRepo, OutLog out) throws Exception {
+        List<User> users = new ArrayList<User>();
+        try {
+            out.printLog("Baixando Collaborators...\n");
+            users.addAll(new CollaboratorService(AuthServices.getGitHubClient()).getCollaborators(gitRepo));
+            out.printLog(users.size() + " Collaborators baixados!");
+        } catch (Exception ex) {
             ex.printStackTrace();
             out.printLog("Erro: " + ex.toString());
-
-        }
-
-        return users;
-    }
-
-    public static List<GHUser> getGitCollaboratorsFromRepository(GHRepository gitRepo) {
-
-        List<GHUser> users = new ArrayList<>();
-        try {
-            //  out.printLog("Baixando Collaborators...\n");
-            users = (List<GHUser>) AuthServices.getGitHubClient().getRepository(gitRepo.getFullName()).getCollaborators();
-            // out.printLog(users.size() + " Collaborators baixados!");
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            // out.printLog("Erro: " + ex.toString());
         }
         return users;
     }
 
-//    public static List<GHUser> getGitWatchersFromRepository(GHRepository gitRepo, OutLog out) throws Exception {
-//        out.printLog("Baixando Watchers...\n");
-//        List<GHUser> users = AuthServices.getGitHubClient().getRepository(gitRepo.getFullName()).getWatchers();
-//        
-//        out.printLog(users.size() + " Watchers baixados!");
-//        return users;
-//    }
+    public static List<User> getGitWatchersFromRepository(Repository gitRepo, OutLog out) throws Exception {
+        out.printLog("Baixando Watchers...\n");
+        List<User> users = new WatcherService(AuthServices.getGitHubClient()).getWatchers(gitRepo);
+        out.printLog(users.size() + " Watchers baixados!");
+        return users;
+    }
 }

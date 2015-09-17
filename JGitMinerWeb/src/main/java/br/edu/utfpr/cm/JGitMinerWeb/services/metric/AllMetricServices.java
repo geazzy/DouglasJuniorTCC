@@ -515,7 +515,7 @@ public class AllMetricServices extends AbstractMetricServices {
         
         List<EntityMetricNode> nodes = new ArrayList<>();
         for (Object obj : list) {
-            nodes.add(new EntityMetricNode(obj));
+            nodes.add(new EntityMetricNode(obj.toString()));
         }
         return nodes;
     

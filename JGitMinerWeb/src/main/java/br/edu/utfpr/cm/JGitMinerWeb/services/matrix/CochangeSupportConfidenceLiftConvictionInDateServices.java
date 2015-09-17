@@ -1,18 +1,13 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.edu.utfpr.cm.JGitMinerWeb.services.matrix;
 
+import br.edu.utfpr.cm.JGitMinerWeb.dao.FileDAO;
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
+import br.edu.utfpr.cm.JGitMinerWeb.dao.PairFileDAO;
 import br.edu.utfpr.cm.JGitMinerWeb.model.matrix.EntityMatrix;
 import br.edu.utfpr.cm.JGitMinerWeb.model.matrix.EntityMatrixNode;
 import br.edu.utfpr.cm.JGitMinerWeb.model.miner.EntityRepository;
 import br.edu.utfpr.cm.JGitMinerWeb.services.metric.auxiliary.AuxFileFileMetrics;
-import br.edu.utfpr.cm.JGitMinerWeb.services.metric.auxiliary.AuxFileFileMetrics2;
 import br.edu.utfpr.cm.JGitMinerWeb.util.OutLog;
-import edu.uci.ics.jung.graph.Graph;
-import static java.lang.Thread.sleep;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -20,7 +15,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.commons.collections15.Transformer;
 
 /**
  *
@@ -53,7 +47,11 @@ public class CochangeSupportConfidenceLiftConvictionInDateServices extends Abstr
     }
 
     public List<String> getFilesToIgnore() {
-        return getStringLinesParam("filesToIgnore", true, true);
+        return getStringLinesParam("filesToIgnore", true, false);
+    }
+
+    public List<String> getFilesToConsiders() {
+        return getStringLinesParam("filesToConsiders", true, false);
     }
 
     public Boolean isOnlyMergeds() {
@@ -64,12 +62,15 @@ public class CochangeSupportConfidenceLiftConvictionInDateServices extends Abstr
         return getIntegerParam("maxFilesPerCommit");
     }
 
-    private int getMinCochange() {
-        return getIntegerParam("minCochange");
+    public Integer getMinFilesPerCommit() {
+        return getIntegerParam("minFilesPerCommit");
     }
+
     @Override
     public void run() {
         try {
+            PairFileDAO pairFileDAO = new PairFileDAO(dao);
+            FileDAO fileDAO = new FileDAO(dao);
 
             if (getRepository() == null) {
                 throw new IllegalArgumentException("Parâmetro Repository não pode ser nulo.");
@@ -80,134 +81,146 @@ public class CochangeSupportConfidenceLiftConvictionInDateServices extends Abstr
             Date beginDate = getBeginDate();
             Date endDate = getEndDate();
             List<String> filesToIgnore = getFilesToIgnore();
+            List<String> filesToConsiders = getFilesToConsiders();
 
             out.printLog("Iniciando preenchimento da lista de pares.");
 
-            List selectParams = new ArrayList();
+            List<Object> selectParams = new ArrayList<>();
 
-            String select = "select distinct fil.filename, fil2.filename, prc.repositorycommits_id, prc2.repositorycommits_id, pul.id "
-                    + "from gitcommitfile fil, "
-                    + "     gitpullrequest_gitrepositorycommit prc, "
-                    + "     gitcommitfile fil2, "
-                    + "     gitpullrequest_gitrepositorycommit prc2, "
-                    + "     gitpullrequest pul "
-                    + "where pul.repository_id = ? "
-                    + "  and pul.createdat between ? and ? ";
-            if (isOnlyMergeds()) {
-                select += "  and pul.mergedat is not null ";
-            }
-            select += "  and prc.entitypullrequest_id = pul.id "
-                    + "  and (select count(*) from gitcommitfile f where f.repositorycommit_id = prc.repositorycommits_id) < " + getMaxFilesPerCommit()
-                    + "  and fil.repositorycommit_id = prc.repositorycommits_id "
-                    + "  and prc2.entitypullrequest_id = pul.id "
-                    + "  and (select count(*) from gitcommitfile f where f.repositorycommit_id = prc2.repositorycommits_id) < " + getMaxFilesPerCommit()
-                    + "  and fil2.repositorycommit_id = prc2.repositorycommits_id "
-                    + "  and md5(fil.filename) < md5(fil2.filename) ";
-            for (String fileName : filesToIgnore) {
-                select += "  and fil.filename not like '" + fileName + "' "
-                        + "  and fil2.filename not like '" + fileName + "' ";
-            }
-
-            System.out.println(select);
+            StringBuilder select = new StringBuilder();
+            select.append("select distinct fil.filename, fil2.filename ")
+                    .append(" from gitcommitfile fil, ")
+                    .append("      gitpullrequest_gitrepositorycommit prc, ")
+                    .append("      gitcommitfile fil2, ")
+                    .append("      gitpullrequest_gitrepositorycommit prc2, ")
+                    .append("      gitpullrequest pul, ")
+                    .append("      gitissue i ")
+                    .append("where pul.repository_id = ? ")
+                    .append("  and pul.issue_id = i.id ")
+                    .append("  and i.commentscount > 1 ")
+                    .append("  and pul.createdat between ? and ? ");
 
             selectParams.add(getRepository().getId());
             selectParams.add(beginDate);
             selectParams.add(endDate);
-            
-            System.out.println("paramsseletc: "+selectParams.toString());
 
-            List<Object[]> cochangeResult = dao.selectNativeWithParams(select, selectParams.toArray());
+            if (isOnlyMergeds()) {
+                select.append("  and pul.mergedat is not null ");
+            }
+            select.append("  and prc.entitypullrequest_id = pul.id ")
+                    .append("  and (select count(distinct(f.filename)) from gitcommitfile f where f.repositorycommit_id = prc.repositorycommits_id) between ? and ?")
+                    .append("  and fil.repositorycommit_id = prc.repositorycommits_id ")
+                    .append("  and prc2.entitypullrequest_id = pul.id ")
+                    .append("  and (select count(distinct(f.filename)) from gitcommitfile f where f.repositorycommit_id = prc2.repositorycommits_id) between ? and ?")
+                    .append("  and fil2.repositorycommit_id = prc2.repositorycommits_id ")
+                    .append("  and md5(fil.filename) <> md5(fil2.filename) ");
 
-            sleep(1l);
+            selectParams.add(getMinFilesPerCommit());
+            selectParams.add(getMaxFilesPerCommit());
+            selectParams.add(getMinFilesPerCommit());
+            selectParams.add(getMaxFilesPerCommit());
 
-            System.out.println("result size: " + cochangeResult.size());
-
-            List<AuxFileFileMetrics2> pairFileMetrics = new ArrayList<>();
-            for (Object[] record : cochangeResult) {
-
-                AuxFileFileMetrics2 pairFileFile = new AuxFileFileMetrics2(record[0] + "", record[1] + "", record[2] + "", record[3] + "", record[4] + "");
-
-                if (pairFileMetrics.contains(pairFileFile)) {
-                    int index = pairFileMetrics.indexOf(pairFileFile);
-
-                    AuxFileFileMetrics2 pairFileToUpdate = pairFileMetrics.get(index);
-//                    System.out.println("pair1: "+pairFileFile.toString());
-//                    System.out.println("pair2: "+pairFileToUpdate.toString());
-                    //remove para evitar os duplicados
-                    //  pairFileMetrics.remove(index);
-                    pairFileToUpdate.addRepoCommitIdAndPullRequestId(pairFileFile);
-                    //add novamente com a lista de repocommit_id atualizada
-//                     System.out.println("pair to update: "+pairFileToUpdate.toString());
-                    pairFileMetrics.add(index, pairFileToUpdate);
-                } else {
-                    pairFileMetrics.add(pairFileFile);
+            if (!filesToIgnore.isEmpty()) {
+                for (String fileName : filesToIgnore) {
+                    select.append("  and fil.filename not like ? ")
+                            .append("  and fil2.filename not like ? ");
+                    selectParams.add(fileName);
+                    selectParams.add(fileName);
                 }
+            }
 
+            if (!filesToConsiders.isEmpty()) {
+                select.append(" and (");
+
+                int likeFilename = 0;
+                for (String fileName : filesToConsiders) {
+                    if (likeFilename++ > 0) {
+                        select.append("or");
+                    }
+                    select.append(" fil.filename like ? ");
+                    selectParams.add(fileName);
+                }
+                select.append(")");
+
+                select.append(" and (");
+
+                likeFilename = 0;
+                for (String fileName : filesToConsiders) {
+                    if (likeFilename++ > 0) {
+                        select.append("or");
+                    }
+                    select.append(" fil2.filename like ? ");
+                    selectParams.add(fileName);
+                }
+                select.append(")");
+            }
+
+            System.out.println(select);
+
+            List<Object[]> cochangeResult = dao.selectNativeWithParams(select.toString(), selectParams.toArray());
+
+            Set<AuxFileFileMetrics> pairFileMetrics = new HashSet<>();
+            for (Object[] record : cochangeResult) {
+                AuxFileFileMetrics pairFile = new AuxFileFileMetrics(record[0] + "", record[1] + "");
+
+                // o arquivo deve aparecer em mais de 1 pull request e não somente 1
+                // caso contrário não é incluso
+                long file1PullRequestIn = fileDAO.calculeNumberOfPullRequestWhereFileIsIn(
+                        getRepository(), pairFile.getFile(),
+                        beginDate, endDate, 0, getMaxFilesPerCommit(), isOnlyMergeds());
+                if (file1PullRequestIn > 1) {
+
+                    long file2PullRequestIn = fileDAO.calculeNumberOfPullRequestWhereFileIsIn(
+                            getRepository(), pairFile.getFile2(),
+                            beginDate, endDate, 0, getMaxFilesPerCommit(), isOnlyMergeds());
+                    if (file2PullRequestIn > 1) {
+                        pairFileMetrics.add(pairFile);
+                    } else {
+                        out.printLog(pairFile.getFile2() + " in #" + file2PullRequestIn + " pull requests");
+                    }
+                } else {
+                    out.printLog(pairFile.getFile2() + " in #" + file1PullRequestIn + " pull requests");
+                }
             }
             cochangeResult.clear();
 
-            Set<AuxFileFileMetrics2> pairFileSetCollectionMetrics = new HashSet<>();
-//            for (AuxFileFileMetrics2 pair : pairFileMetrics) {
-//                pairFileSetCollectionMetrics.add(pair);
-//            }
-            pairFileSetCollectionMetrics.addAll(pairFileMetrics);
-            // pairFileMetrics.clear();
-
-            out.printLog(pairFileSetCollectionMetrics.size() + " pares encontrados.");
-
-            sleep(1l);
+            out.printLog(pairFileMetrics.size() + " pares encontrados.");
 
             out.printLog("Iniciando cálculo do support, confidence, lift e conviction.");
             int i = 1;
-             Set<AuxFileFileMetrics2> pairFileSetCollectionMetricsFinal = new HashSet<>();
-             
-            for (AuxFileFileMetrics2 pairFile : pairFileSetCollectionMetrics) {
-                if (i % 100 == 0 || i == pairFileSetCollectionMetrics.size()) {
-                    System.out.println(i + "/" + pairFileSetCollectionMetrics.size());
+            for (AuxFileFileMetrics pairFile : pairFileMetrics) {
+                if (i % 100 == 0 || i == pairFileMetrics.size()) {
+                    System.out.println(i + "/" + pairFileMetrics.size());
                 }
 
-                // System.out.println("ids: "+ pairFile.getRepositorycommits_idList().toString());
-//                List<Long> repoCommits_idList = getRepoCommitsID(pairFile.getFile(), pairFile.getFile2(), getBeginDate(), getEndDate());
-//                pairFile.addRepositoyCommits_ids(repoCommits_idList);
-//                repoCommits_idList.clear();
-                Long pairFileNumberOfPullrequestOfPair = calculeUpdates(pairFile.getFile(), pairFile.getFile2(), getBeginDate(), getEndDate());
+                Long pairFileNumberOfPullrequestOfPair = pairFileDAO.calculeNumberOfPullRequest(getRepository(), pairFile.getFile(), pairFile.getFile2(), getBeginDate(), getEndDate(), isOnlyMergeds());
+                Long pairFileNumberOfPullrequestOfPairFuture = pairFileDAO.calculeNumberOfPullRequest(getRepository(), pairFile.getFile(), pairFile.getFile2(), futureBeginDate, futureEndDate, isOnlyMergeds());
+                Long fileNumberOfPullrequestOfPairFuture = pairFileDAO.calculeNumberOfPullRequest(getRepository(), pairFile.getFile(), null, futureBeginDate, futureEndDate, isOnlyMergeds());
+                Long file2NumberOfPullrequestOfPairFuture = pairFileDAO.calculeNumberOfPullRequest(getRepository(), pairFile.getFile2(), null, futureBeginDate, futureEndDate, isOnlyMergeds());
+                Long numberOfAllPullrequestFuture = pairFileDAO.calculeNumberOfPullRequest(getRepository(), null, null, futureBeginDate, futureEndDate, isOnlyMergeds());
 
-                if (pairFileNumberOfPullrequestOfPair >= getMinCochange()) {
+                pairFile.addMetrics(pairFileNumberOfPullrequestOfPair, pairFileNumberOfPullrequestOfPairFuture, fileNumberOfPullrequestOfPairFuture, file2NumberOfPullrequestOfPairFuture, numberOfAllPullrequestFuture);
 
-                    Long pairFileNumberOfPullrequestOfPairFuture = calculeUpdates(pairFile.getFile(), pairFile.getFile2(), futureBeginDate, futureEndDate);
-                    Long fileNumberOfPullrequestOfPairFuture = calculeUpdates(pairFile.getFile(), null, futureBeginDate, futureEndDate);
-                    Long file2NumberOfPullrequestOfPairFuture = calculeUpdates(pairFile.getFile2(), null, futureBeginDate, futureEndDate);
-                    Long numberOfAllPullrequestFuture = calculeUpdates(null, null, futureBeginDate, futureEndDate);
+                Double supportFile = numberOfAllPullrequestFuture == 0 ? 0d : fileNumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
+                Double supportFile2 = numberOfAllPullrequestFuture == 0 ? 0d : file2NumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
+                Double supportPairFile = numberOfAllPullrequestFuture == 0 ? 0d : pairFileNumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
+                Double confidence = supportFile == 0 ? 0d : supportPairFile / supportFile;
+                Double confidence2 = supportFile2 == 0 ? 0d : supportPairFile / supportFile2;
+                Double lift = supportFile * supportFile2 == 0 ? 0d : supportPairFile / (supportFile * supportFile2);
+                Double conviction = 1 - confidence == 0 ? 0d : (1 - supportFile) / (1 - confidence);
+                Double conviction2 = 1 - confidence2 == 0 ? 0d : (1 - supportFile2) / (1 - confidence2);
 
-                    pairFile.addMetrics(pairFileNumberOfPullrequestOfPair, pairFileNumberOfPullrequestOfPairFuture, fileNumberOfPullrequestOfPairFuture, file2NumberOfPullrequestOfPairFuture, numberOfAllPullrequestFuture);
+                pairFile.addMetrics(supportFile, supportFile2, supportPairFile, confidence, confidence2, lift, conviction, conviction2);
 
-                    Double supportFile = numberOfAllPullrequestFuture == 0 ? 0d : fileNumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
-                    Double supportFile2 = numberOfAllPullrequestFuture == 0 ? 0d : file2NumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
-                    Double supportPairFile = numberOfAllPullrequestFuture == 0 ? 0d : pairFileNumberOfPullrequestOfPairFuture.doubleValue() / numberOfAllPullrequestFuture.doubleValue();
-                    Double confidence = supportFile == 0 ? 0d : supportPairFile / supportFile;
-                    Double confidence2 = supportFile2 == 0 ? 0d : supportPairFile / supportFile2;
-                    Double lift = supportFile * supportFile2 == 0 ? 0d : supportPairFile / (supportFile * supportFile2);
-                    Double conviction = 1 - confidence == 0 ? 0d : (1 - supportFile2) / (1 - confidence);
-                    Double conviction2 = 1 - confidence2 == 0 ? 0d : (1 - supportFile2) / (1 - confidence2);
-
-                    pairFile.addMetrics(supportFile, supportFile2, supportPairFile, confidence, confidence2, lift, conviction, conviction2);
-                    pairFileSetCollectionMetricsFinal.add(pairFile);
-                }
                 i++;
-                sleep(1l);
             }
 
-            
             EntityMatrix matrix = new EntityMatrix();
-            
-            matrix.setNodes(objectsToNodes(pairFileSetCollectionMetricsFinal));
+            matrix.setNodes(objectsToNodes(pairFileMetrics));
 
-           // pairFileMetrics.clear();
-            sleep(1l);
+            pairFileMetrics.clear();
 
             saveMatrix(matrix);
-        } catch (InterruptedException ex) {
-            ex.printStackTrace();
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -243,96 +256,4 @@ public class CochangeSupportConfidenceLiftConvictionInDateServices extends Abstr
                 + "pairFileCochange;pairFileCochangeFuture;fileChangeFuture;file2ChangeFuture;allPullrequestFuture;"
                 + "supportFile;supportFile2;supportPairFile;confidence;confidence2;lift;conviction;conviction2";
     }
-
-    private long calculeUpdates(String file, String file2, Date beginDate, Date endDate) {
-        List selectParams = new ArrayList();
-
-        String jpql = " SELECT count(pul.*) "
-                + " FROM gitpullrequest pul "
-                + " where pul.repository_id = ? "
-                + "   and pul.createdat between ? and ? ";
-
-        if (isOnlyMergeds()) {
-            jpql += "  and pul.mergedat is not null ";
-        }
-
-        selectParams.add(getRepository().getId());
-        selectParams.add(beginDate);
-        selectParams.add(endDate);
-
-        if (file != null) {
-            jpql += "  and exists  "
-                    + "  ( select f.* "
-                    + "  from gitpullrequest_gitrepositorycommit r, "
-                    + "       gitcommitfile f  "
-                    + "  where r.entitypullrequest_id = pul.id "
-                    + "    and f.repositorycommit_id = r.repositorycommits_id "
-                    + "    and f.filename = ? ) ";
-            selectParams.add(file);
-        }
-
-        if (file2 != null) {
-            jpql += "  and exists  "
-                    + "  ( select f2.*  "
-                    + "  from gitpullrequest_gitrepositorycommit r2, "
-                    + "       gitcommitfile f2  "
-                    + "  where r2.entitypullrequest_id = pul.id "
-                    + "    and f2.repositorycommit_id = r2.repositorycommits_id "
-                    + "    and f2.filename = ? ) ";
-            selectParams.add(file2);
-        }
-
-        Long count = dao.selectNativeOneWithParams(jpql, selectParams.toArray());
-
-        return count != null ? count : 0l;
-    }
-
-    private List<Long> getRepoCommitsID(String file, String file2, Date beginDate, Date endDate) {
-
-        List selectParams = new ArrayList();
-
-        String jpql = " SELECT prc.repositorycommits_id "
-                + " FROM gitpullrequest pul, gitpullrequest_gitrepositorycommit prc "
-                + " where pul.repository_id = ? "
-                + "   and pul.createdat between ? and ? ";
-
-        if (isOnlyMergeds()) {
-            jpql += "  and pul.mergedat is not null ";
-        }
-
-        selectParams.add(getRepository().getId());
-        selectParams.add(beginDate);
-        selectParams.add(endDate);
-
-        jpql += "  and exists  "
-                + "  ( select f.* "
-                + "  from gitpullrequest_gitrepositorycommit r, "
-                + "       gitcommitfile f  "
-                + "  where r.entitypullrequest_id = pul.id "
-                + "    and f.repositorycommit_id = r.repositorycommits_id "
-                + "    and f.filename = ? ) ";
-        selectParams.add(file);
-
-        jpql += "  and exists  "
-                + "  ( select f2.*  "
-                + "  from gitpullrequest_gitrepositorycommit r2, "
-                + "       gitcommitfile f2  "
-                + "  where r2.entitypullrequest_id = pul.id "
-                + "    and f2.repositorycommit_id = r2.repositorycommits_id "
-                + "    and f2.filename = ? ) ";
-
-        jpql += "   and prc.entitypullrequest_id = pul.id ";
-
-        selectParams.add(file2);
-
-        System.out.println("jpql: " + jpql);
-
-        List<Long> result = dao.selectNativeWithParams(jpql, selectParams.toArray());
-
-        System.out.println("file1: " + file + " file2: " + file2);
-        System.out.println(result);
-
-        return result;
-    }
-
 }

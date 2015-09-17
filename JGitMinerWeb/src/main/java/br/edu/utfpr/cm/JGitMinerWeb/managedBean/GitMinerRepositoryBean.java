@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.edu.utfpr.cm.JGitMinerWeb.managedBean;
 
 import br.edu.utfpr.cm.JGitMinerWeb.dao.GenericDao;
@@ -12,11 +8,12 @@ import br.edu.utfpr.cm.JGitMinerWeb.util.JsfUtil;
 import java.io.Serializable;
 import java.util.List;
 import javax.ejb.EJB;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.RequestScoped;
-import org.kohsuke.github.GHRepository;
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Named;
+import org.eclipse.egit.github.core.Repository;
+import org.eclipse.egit.github.core.service.RepositoryService;
 
-@ManagedBean(name = "gitMinerRepositoryBean")
+@Named
 @RequestScoped
 public class GitMinerRepositoryBean implements Serializable {
 
@@ -85,7 +82,7 @@ public class GitMinerRepositoryBean implements Serializable {
                 throw new RuntimeException("Informe o nome e login do repositorio desejado, ou a URL para a página do GitHub.");
             }
 
-            GHRepository gitRepository = AuthServices.getGitHubClient().getRepository(this.repositoryOwnerLogin +"/"+ this.repositoryName);
+            Repository gitRepository = new RepositoryService(AuthServices.getGitHubClient()).getRepository(this.repositoryOwnerLogin, this.repositoryName);
 
             System.err.println("Repositório: " + gitRepository.getName() + " | " + gitRepository.getOwner().getLogin() + " | " + gitRepository.getCreatedAt() + " | " + gitRepository.getHtmlUrl());
 
